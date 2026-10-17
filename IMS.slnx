@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Business/Business.csproj" />
+  <Project Path="Data/Data.csproj" />
+  <Project Path="DTOs/DTOs.csproj" />
+  <Project Path="Entities/Entities.csproj" />
+  <Project Path="IMS_API/IMS_API.csproj" />
+</Solution>
