@@ -16,6 +16,8 @@ namespace Data.Interfaces
             CancellationToken ct = default);
 
         void Update(T entity);
+        // In IGenericRepository<T>
+        void Delete(T entity);
 
         Task<int> SaveChangesAsync(
             CancellationToken ct = default);

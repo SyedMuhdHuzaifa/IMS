@@ -1,4 +1,4 @@
-﻿using DTOs.SalesOrder;
+﻿using DTOs.SalesOrders;
 
 namespace DTOs.SalesOrders
 {

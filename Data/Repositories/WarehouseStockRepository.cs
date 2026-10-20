@@ -48,5 +48,14 @@ namespace Data.Repositories
                     p.WarehouseStocks.Sum(ws => (int?)ws.QuantityOnHand) ?? 0))
                 .ToListAsync(ct);
         }
+
+        public async Task<IReadOnlyDictionary<int, int>> GetTotalsByProductAsync(CancellationToken ct = default)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .GroupBy(ws => ws.ProductId)
+                .Select(g => new { ProductId = g.Key, Total = g.Sum(ws => ws.QuantityOnHand) })
+                .ToDictionaryAsync(x => x.ProductId, x => x.Total, ct);
+        }
     }
 }
