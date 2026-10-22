@@ -1,4 +1,4 @@
-﻿using Business.Interfaces;
+using Business.Interfaces;
 using Data.Interfaces;
 using DTOs.SalesOrders;
 using IMS.Entities;
@@ -67,10 +67,12 @@ namespace Business.Services
             if (customer is null)
                 throw new InvalidOperationException($"Customer '{request.CustomerId}' does not exist.");
 
-            // Validate warehouse exists
+            // Validate warehouse exists and is active
             var warehouse = await _warehouseRepository.GetByIdAsync(request.SourceWarehouseId, ct);
             if (warehouse is null)
                 throw new InvalidOperationException($"Source warehouse '{request.SourceWarehouseId}' does not exist.");
+            if (!warehouse.IsActive)
+                throw new InvalidOperationException($"Source warehouse '{warehouse.Name}' is inactive.");
 
             // Validate products and check stock
             decimal totalAmount = 0;
@@ -81,11 +83,13 @@ namespace Business.Services
                 var product = await _productRepository.GetByIdAsync(itemRequest.ProductId, ct);
                 if (product is null)
                     throw new InvalidOperationException($"Product '{itemRequest.ProductId}' does not exist.");
+                if (!product.IsActive)
+                    throw new InvalidOperationException($"Product '{product.Name}' is inactive.");
 
                 // Check stock availability
                 var stock = await _warehouseStockRepository.GetByWarehouseAndProductAsync(request.SourceWarehouseId, itemRequest.ProductId, ct);
                 if (stock is null || stock.QuantityOnHand < itemRequest.Quantity)
-                    throw new InvalidOperationException($"Insufficient stock for product '{itemRequest.ProductId}' in warehouse.");
+                    throw new InvalidOperationException($"Insufficient stock for product '{product.Name}' in warehouse.");
 
                 // Determine unit price
                 var unitPrice = itemRequest.UnitPrice ?? product.SellingPrice;
@@ -132,10 +136,12 @@ namespace Business.Services
             if (customer is null)
                 throw new InvalidOperationException($"Customer '{request.CustomerId}' does not exist.");
 
-            // Validate warehouse exists
+            // Validate warehouse exists and is active
             var warehouse = await _warehouseRepository.GetByIdAsync(request.SourceWarehouseId, ct);
             if (warehouse is null)
                 throw new InvalidOperationException($"Source warehouse '{request.SourceWarehouseId}' does not exist.");
+            if (!warehouse.IsActive)
+                throw new InvalidOperationException($"Source warehouse '{warehouse.Name}' is inactive.");
 
             // Validate products and check stock
             decimal totalAmount = 0;
@@ -146,11 +152,13 @@ namespace Business.Services
                 var product = await _productRepository.GetByIdAsync(itemRequest.ProductId, ct);
                 if (product is null)
                     throw new InvalidOperationException($"Product '{itemRequest.ProductId}' does not exist.");
+                if (!product.IsActive)
+                    throw new InvalidOperationException($"Product '{product.Name}' is inactive.");
 
                 // Check stock availability
                 var stock = await _warehouseStockRepository.GetByWarehouseAndProductAsync(request.SourceWarehouseId, itemRequest.ProductId, ct);
                 if (stock is null || stock.QuantityOnHand < itemRequest.Quantity)
-                    throw new InvalidOperationException($"Insufficient stock for product '{itemRequest.ProductId}' in warehouse.");
+                    throw new InvalidOperationException($"Insufficient stock for product '{product.Name}' in warehouse.");
 
                 // Determine unit price
                 var unitPrice = itemRequest.UnitPrice ?? product.SellingPrice;
@@ -214,11 +222,15 @@ namespace Business.Services
             foreach (var item in order.SalesOrderItems)
             {
                 var stock = await _warehouseStockRepository.GetByWarehouseAndProductAsync(order.SourceWarehouseId, item.ProductId, ct);
-                if (stock is not null)
+                if (stock is null || stock.QuantityOnHand < item.Quantity)
                 {
-                    stock.QuantityOnHand -= item.Quantity;
-                    _warehouseStockRepository.Update(stock);
+                    var productName = item.Product?.Name ?? $"ID {item.ProductId}";
+                    throw new InvalidOperationException(
+                        $"Insufficient stock for product '{productName}' in warehouse '{order.SourceWarehouse?.Name ?? order.SourceWarehouseId.ToString()}'. Available: {stock?.QuantityOnHand ?? 0}, Required: {item.Quantity}.");
                 }
+
+                stock.QuantityOnHand -= item.Quantity;
+                _warehouseStockRepository.Update(stock);
 
                 // Record transaction
                 var transaction = new StockTransaction

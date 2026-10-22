@@ -1,4 +1,4 @@
-﻿using Business.Interfaces;
+using Business.Interfaces;
 using Data.Interfaces;
 using DTOs.Warehouses;
 using IMS.Entities;
@@ -8,10 +8,14 @@ namespace Business.Services
     public class WarehouseService : IWarehouseService
     {
         private readonly IWarehouseRepository _warehouseRepository;
+        private readonly IWarehouseStockRepository _warehouseStockRepository;
 
-        public WarehouseService(IWarehouseRepository warehouseRepository)
+        public WarehouseService(
+            IWarehouseRepository warehouseRepository,
+            IWarehouseStockRepository warehouseStockRepository)
         {
             _warehouseRepository = warehouseRepository;
+            _warehouseStockRepository = warehouseStockRepository;
         }
 
         public async Task<IReadOnlyList<WarehouseDto>> GetAllAsync(bool includeInactive = false, CancellationToken ct = default)
@@ -73,7 +77,16 @@ namespace Business.Services
             if (!warehouse.IsActive)
                 return true;
 
-            await _warehouseRepository.DeactivateAsync(id, ct);
+            var stocks = await _warehouseStockRepository.GetByWarehouseAsync(id, ct);
+            if (stocks.Any(s => s.QuantityOnHand > 0))
+            {
+                throw new InvalidOperationException(
+                    $"Warehouse '{warehouse.Name}' has active stock on hand and cannot be deactivated. Transfer or adjust stock first.");
+            }
+
+            warehouse.IsActive = false;
+            _warehouseRepository.Update(warehouse);
+            await _warehouseRepository.SaveChangesAsync(ct);
 
             return true;
         }

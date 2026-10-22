@@ -44,7 +44,7 @@ namespace Data.Interfaces
         /// <summary>
         /// Gets the warehouse repository.
         /// </summary>
-        IWareHouseRepository Warehouses { get; }
+        IWarehouseRepository Warehouses { get; }
 
         /// <summary>
         /// Gets the warehouse stock repository.

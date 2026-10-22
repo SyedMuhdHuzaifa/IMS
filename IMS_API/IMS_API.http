@@ -1,6 +1,76 @@
 @IMS_API_HostAddress = http://localhost:5062
 
-GET {{IMS_API_HostAddress}}/weatherforecast/
+### 1. Authenticate / Login as Default Admin
+# POST /api/auth/login
+# @name login
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "admin",
+  "password": "AdminPassword123!"
+}
+
+### Store Auth Token from response
+@authToken = {{login.response.body.token}}
+
+### 2. Get Current Logged-in User Profile
+GET {{IMS_API_HostAddress}}/api/auth/me
+Authorization: Bearer {{authToken}}
+
+### 3. Get All Categories
+GET {{IMS_API_HostAddress}}/api/categories
 Accept: application/json
 
-###
+### 4. Create a New Category
+POST {{IMS_API_HostAddress}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Hardware Tools",
+  "description": "Handheld and power tools for maintenance"
+}
+
+### 5. Get All Warehouses
+GET {{IMS_API_HostAddress}}/api/warehouses
+Accept: application/json
+
+### 6. Create a Product
+POST {{IMS_API_HostAddress}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Dell XPS 15 Laptop",
+  "sku": "DELL-XPS-15",
+  "description": "High performance 15-inch laptop",
+  "purchasePrice": 1200.00,
+  "sellingPrice": 1650.00,
+  "reorderLevel": 5,
+  "categoryId": 1
+}
+
+### 7. Get All Products
+GET {{IMS_API_HostAddress}}/api/products
+Accept: application/json
+
+### 8. Search Products by SKU or Name
+GET {{IMS_API_HostAddress}}/api/products/search?term=DELL
+Accept: application/json
+
+### 9. Query Warehouse Stocks
+GET {{IMS_API_HostAddress}}/api/warehousestocks
+Accept: application/json
+
+### 10. Check Low Stock Items
+GET {{IMS_API_HostAddress}}/api/warehousestocks/low-stock
+Accept: application/json
+
+### 11. Get All Sales Orders
+GET {{IMS_API_HostAddress}}/api/salesorders
+Accept: application/json
+
+### 12. Get All Purchase Orders
+GET {{IMS_API_HostAddress}}/api/purchaseorders
+Accept: application/json

@@ -1,5 +1,9 @@
 using Business.Specifications;
 using Data.Interfaces;
+using IMS.Entities;
+using Business.Base;
+
+
 
 namespace Business.Services.Generic
 {

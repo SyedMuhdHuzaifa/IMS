@@ -1,4 +1,4 @@
-﻿using Business.Interfaces;
+using Business.Interfaces;
 using Data.Interfaces;
 using DTOs.Categories;
 using IMS.Entities;
@@ -16,19 +16,26 @@ namespace Business.Services
 
         public async Task<IReadOnlyList<CategoryDto>> GetAllAsync(CancellationToken ct = default)
         {
-            var categories = await _categoryRepository.GetAllWithProductCountsAsync(ct);
+            var categories = await _categoryRepository.GetAllAsync(ct);
+            var counts = await _categoryRepository.GetProductCountsAsync(ct);
 
-            var result = new List<CategoryDto>(categories.Count);
-            foreach (var category in categories)
-                result.Add(await MapToDtoAsync(category, ct));
-
-            return result;
+            return categories.Select(c => new CategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                ProductCount = counts.GetValueOrDefault(c.Id, 0)
+            }).ToList();
         }
 
         public async Task<CategoryDto?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             var category = await _categoryRepository.GetByIdAsync(id, ct);
-            return category is null ? null : await MapToDtoAsync(category, ct);
+            if (category is null)
+                return null;
+
+            var productCount = await _categoryRepository.GetProductCountAsync(id, ct);
+            return MapToDto(category, productCount);
         }
 
         public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request, CancellationToken ct = default)
@@ -47,7 +54,7 @@ namespace Business.Services
             await _categoryRepository.AddAsync(category, ct);
             await _categoryRepository.SaveChangesAsync(ct);
 
-            return await MapToDtoAsync(category, ct);
+            return MapToDto(category, 0);
         }
 
         public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryRequest request, CancellationToken ct = default)
@@ -67,7 +74,8 @@ namespace Business.Services
             _categoryRepository.Update(category);
             await _categoryRepository.SaveChangesAsync(ct);
 
-            return await MapToDtoAsync(category, ct);
+            var productCount = await _categoryRepository.GetProductCountAsync(id, ct);
+            return MapToDto(category, productCount);
         }
 
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
@@ -87,14 +95,14 @@ namespace Business.Services
             return true;
         }
 
-        private async Task<CategoryDto> MapToDtoAsync(Category category, CancellationToken ct)
+        private static CategoryDto MapToDto(Category category, int productCount = 0)
         {
             return new CategoryDto
             {
                 Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
-                ProductCount = await _categoryRepository.GetProductCountAsync(category.Id, ct)
+                ProductCount = productCount
             };
         }
     }

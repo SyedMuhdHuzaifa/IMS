@@ -1,4 +1,4 @@
-﻿using Business.Interfaces;
+using Business.Interfaces;
 using Data.Interfaces;
 using DTOs.Suppliers;
 using IMS.Entities;
@@ -23,7 +23,11 @@ namespace Business.Services
         public async Task<SupplierDto?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             var supplier = await _supplierRepository.GetByIdAsync(id, ct);
-            return supplier is null ? null : MapToDto(supplier, 0);
+            if (supplier is null)
+                return null;
+
+            var poCount = await _supplierRepository.GetPurchaseOrderCountAsync(id, ct);
+            return MapToDto(supplier, poCount);
         }
 
         public async Task<IReadOnlyList<SupplierDto>> SearchAsync(string term, CancellationToken ct = default)
@@ -84,19 +88,15 @@ namespace Business.Services
             if (supplier is null)
                 return false;
 
-            // Prevent deletion if supplier has purchase orders
-            // For now, we check this by trying to delete and catching if there's a constraint violation
-            // Ideally, we'd have a GetPurchaseOrderCountAsync method in the repository
-            _supplierRepository.Delete(supplier);
-            try
-            {
-                await _supplierRepository.SaveChangesAsync(ct);
-            }
-            catch (Exception ex) when (ex.InnerException?.Message.Contains("FOREIGN KEY constraint failed") ?? false)
+            var poCount = await _supplierRepository.GetPurchaseOrderCountAsync(id, ct);
+            if (poCount > 0)
             {
                 throw new InvalidOperationException(
-                    $"Supplier '{supplier.Name}' has purchase orders and cannot be deleted.");
+                    $"Supplier '{supplier.Name}' has {poCount} purchase order(s) and cannot be deleted.");
             }
+
+            _supplierRepository.Delete(supplier);
+            await _supplierRepository.SaveChangesAsync(ct);
 
             return true;
         }

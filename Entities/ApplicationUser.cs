@@ -14,5 +14,6 @@ namespace IMS.Entities
         public ICollection<StockTransaction> CreatedStockTransactions { get; set; } = new List<StockTransaction>();
         public ICollection<StockTransfer> CreatedStockTransfers { get; set; } = new List<StockTransfer>();
         public ICollection<StockTransfer> ApprovedStockTransfers { get; set; } = new List<StockTransfer>();
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

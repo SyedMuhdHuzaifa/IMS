@@ -1,4 +1,4 @@
-﻿using Business.Interfaces;
+using Business.Interfaces;
 using Data.Interfaces;
 using DTOs.PurchaseOrders;
 using IMS.Entities;
@@ -67,10 +67,12 @@ namespace Business.Services
             if (supplier is null)
                 throw new InvalidOperationException($"Supplier '{request.SupplierId}' does not exist.");
 
-            // Validate warehouse exists
+            // Validate warehouse exists and is active
             var warehouse = await _warehouseRepository.GetByIdAsync(request.DestinationWarehouseId, ct);
             if (warehouse is null)
                 throw new InvalidOperationException($"Destination warehouse '{request.DestinationWarehouseId}' does not exist.");
+            if (!warehouse.IsActive)
+                throw new InvalidOperationException($"Destination warehouse '{warehouse.Name}' is inactive.");
 
             // Validate products
             foreach (var item in request.Items)
@@ -78,6 +80,8 @@ namespace Business.Services
                 var product = await _productRepository.GetByIdAsync(item.ProductId, ct);
                 if (product is null)
                     throw new InvalidOperationException($"Product '{item.ProductId}' does not exist.");
+                if (!product.IsActive)
+                    throw new InvalidOperationException($"Product '{product.Name}' is inactive.");
             }
 
             var totalAmount = request.Items.Sum(item => item.Quantity * item.UnitPrice);
@@ -120,10 +124,12 @@ namespace Business.Services
             if (supplier is null)
                 throw new InvalidOperationException($"Supplier '{request.SupplierId}' does not exist.");
 
-            // Validate warehouse exists
+            // Validate warehouse exists and is active
             var warehouse = await _warehouseRepository.GetByIdAsync(request.DestinationWarehouseId, ct);
             if (warehouse is null)
                 throw new InvalidOperationException($"Destination warehouse '{request.DestinationWarehouseId}' does not exist.");
+            if (!warehouse.IsActive)
+                throw new InvalidOperationException($"Destination warehouse '{warehouse.Name}' is inactive.");
 
             // Validate products
             foreach (var item in request.Items)
@@ -131,6 +137,8 @@ namespace Business.Services
                 var product = await _productRepository.GetByIdAsync(item.ProductId, ct);
                 if (product is null)
                     throw new InvalidOperationException($"Product '{item.ProductId}' does not exist.");
+                if (!product.IsActive)
+                    throw new InvalidOperationException($"Product '{product.Name}' is inactive.");
             }
 
             order.SupplierId = request.SupplierId;

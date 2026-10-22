@@ -1,4 +1,4 @@
-﻿using Business.Interfaces;
+using Business.Interfaces;
 using Data.Interfaces;
 using DTOs.StockTransfers;
 using IMS.Entities;
@@ -63,14 +63,18 @@ namespace Business.Services
             if (request.SourceWarehouseId == request.DestinationWarehouseId)
                 throw new InvalidOperationException("Source and destination warehouses must be different.");
 
-            // Validate warehouses exist
+            // Validate warehouses exist and are active
             var sourceWarehouse = await _warehouseRepository.GetByIdAsync(request.SourceWarehouseId, ct);
             if (sourceWarehouse is null)
                 throw new InvalidOperationException($"Source warehouse '{request.SourceWarehouseId}' does not exist.");
+            if (!sourceWarehouse.IsActive)
+                throw new InvalidOperationException($"Source warehouse '{sourceWarehouse.Name}' is inactive.");
 
             var destWarehouse = await _warehouseRepository.GetByIdAsync(request.DestinationWarehouseId, ct);
             if (destWarehouse is null)
                 throw new InvalidOperationException($"Destination warehouse '{request.DestinationWarehouseId}' does not exist.");
+            if (!destWarehouse.IsActive)
+                throw new InvalidOperationException($"Destination warehouse '{destWarehouse.Name}' is inactive.");
 
             // Validate products and no duplicates
             var productIds = new HashSet<int>();
@@ -82,6 +86,8 @@ namespace Business.Services
                 var product = await _productRepository.GetByIdAsync(item.ProductId, ct);
                 if (product is null)
                     throw new InvalidOperationException($"Product '{item.ProductId}' does not exist.");
+                if (!product.IsActive)
+                    throw new InvalidOperationException($"Product '{product.Name}' is inactive.");
             }
 
             var transfer = new StockTransfer
@@ -120,14 +126,18 @@ namespace Business.Services
             if (request.SourceWarehouseId == request.DestinationWarehouseId)
                 throw new InvalidOperationException("Source and destination warehouses must be different.");
 
-            // Validate warehouses exist
+            // Validate warehouses exist and are active
             var sourceWarehouse = await _warehouseRepository.GetByIdAsync(request.SourceWarehouseId, ct);
             if (sourceWarehouse is null)
                 throw new InvalidOperationException($"Source warehouse '{request.SourceWarehouseId}' does not exist.");
+            if (!sourceWarehouse.IsActive)
+                throw new InvalidOperationException($"Source warehouse '{sourceWarehouse.Name}' is inactive.");
 
             var destWarehouse = await _warehouseRepository.GetByIdAsync(request.DestinationWarehouseId, ct);
             if (destWarehouse is null)
                 throw new InvalidOperationException($"Destination warehouse '{request.DestinationWarehouseId}' does not exist.");
+            if (!destWarehouse.IsActive)
+                throw new InvalidOperationException($"Destination warehouse '{destWarehouse.Name}' is inactive.");
 
             transfer.SourceWarehouseId = request.SourceWarehouseId;
             transfer.DestinationWarehouseId = request.DestinationWarehouseId;
@@ -176,6 +186,9 @@ namespace Business.Services
             if (transfer.Status != "Pending")
                 throw new InvalidOperationException($"Cannot approve transfer in '{transfer.Status}' status.");
 
+            if (transfer.CreatedByUserId == userId)
+                throw new InvalidOperationException("Users cannot approve their own stock transfers.");
+
             transfer.Status = "Approved";
             transfer.ApprovedByUserId = userId;
             _transferRepository.Update(transfer);
@@ -197,11 +210,15 @@ namespace Business.Services
             foreach (var item in transfer.StockTransferItems)
             {
                 var sourceStock = await _warehouseStockRepository.GetByWarehouseAndProductAsync(transfer.SourceWarehouseId, item.ProductId, ct);
-                if (sourceStock is not null)
+                if (sourceStock is null || sourceStock.QuantityOnHand < item.Quantity)
                 {
-                    sourceStock.QuantityOnHand -= item.Quantity;
-                    _warehouseStockRepository.Update(sourceStock);
+                    var productName = item.Product?.Name ?? $"ID {item.ProductId}";
+                    throw new InvalidOperationException(
+                        $"Insufficient stock for product '{productName}' in source warehouse '{transfer.SourceWarehouse?.Name ?? transfer.SourceWarehouseId.ToString()}'. Available: {sourceStock?.QuantityOnHand ?? 0}, Required: {item.Quantity}.");
                 }
+
+                sourceStock.QuantityOnHand -= item.Quantity;
+                _warehouseStockRepository.Update(sourceStock);
 
                 var destStock = await _warehouseStockRepository.GetByWarehouseAndProductAsync(transfer.DestinationWarehouseId, item.ProductId, ct);
                 if (destStock is null)

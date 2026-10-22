@@ -1,4 +1,4 @@
-﻿using IMS.Entities;
+using IMS.Entities;
 
 namespace Data.Interfaces;
 
@@ -13,4 +13,6 @@ public interface ICategoryRepository : IGenericRepository<Category>
     Task<IReadOnlyList<Category>> GetAllWithProductCountsAsync(CancellationToken ct = default);
 
     Task<int> GetProductCountAsync(int categoryId, CancellationToken ct = default);
+
+    Task<IReadOnlyDictionary<int, int>> GetProductCountsAsync(CancellationToken ct = default);
 }

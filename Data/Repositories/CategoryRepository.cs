@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -45,5 +45,13 @@ namespace Data.Repositories
 
         public Task<int> GetProductCountAsync(int categoryId, CancellationToken ct = default)
             => _context.Products.CountAsync(p => p.CategoryId == categoryId, ct);
+
+        public async Task<IReadOnlyDictionary<int, int>> GetProductCountsAsync(CancellationToken ct = default)
+        {
+            return await _context.Products
+                .GroupBy(p => p.CategoryId)
+                .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CategoryId, x => x.Count, ct);
+        }
     }
 }

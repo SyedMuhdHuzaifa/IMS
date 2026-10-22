@@ -1,13 +1,10 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using Data.Interfaces;
+using Data;
+using IMS.Data;
 
 namespace Data.Repositories
 {
-    /// <summary>
-    /// Implements the Unit of Work pattern to coordinate multiple repositories
-    /// and manage transactions across the entire application.
-    /// Repositories are injected via DI to support complex initialization (e.g., Identity managers).
-    /// </summary>
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _context;
@@ -20,7 +17,7 @@ namespace Data.Repositories
         private readonly ICustomerRepository _customers;
         private readonly IProductRepository _products;
         private readonly ISupplierRepository _suppliers;
-        private readonly IWareHouseRepository _warehouses;
+        private readonly IWarehouseRepository _warehouses;
         private readonly IWarehouseStockRepository _warehouseStocks;
         private readonly IStockTransactionRepository _stockTransactions;
         private readonly IStockTransferRepository _stockTransfers;
@@ -35,7 +32,7 @@ namespace Data.Repositories
             ICustomerRepository customers,
             IProductRepository products,
             ISupplierRepository suppliers,
-            IWareHouseRepository warehouses,
+            IWarehouseRepository warehouses,
             IWarehouseStockRepository warehouseStocks,
             IStockTransactionRepository stockTransactions,
             IStockTransferRepository stockTransfers,
@@ -90,7 +87,7 @@ namespace Data.Repositories
         /// <summary>
         /// Gets the warehouse repository.
         /// </summary>
-        public IWareHouseRepository Warehouses => _warehouses;
+        public IWarehouseRepository Warehouses => _warehouses;
 
         /// <summary>
         /// Gets the warehouse stock repository.
