@@ -73,47 +73,53 @@ namespace Data
                 }
 
                 // 3. Seed Warehouses
-                if (!await context.Warehouses.AnyAsync())
+                var defaultWarehouses = new[]
                 {
-                    var warehouses = new[]
+                    new Warehouse
                     {
-                        new Warehouse
-                        {
-                            Name = "Main Central Warehouse",
-                            Code = "WH-MAIN",
-                            Location = "Central Distribution Center, Building A",
-                            Description = "Primary inventory storage and fulfillment warehouse",
-                            IsActive = true
-                        },
-                        new Warehouse
-                        {
-                            Name = "East Regional Facility",
-                            Code = "WH-EAST",
-                            Location = "Metro Logistics Hub, Bay 4",
-                            Description = "Secondary distribution and transfer center",
-                            IsActive = true
-                        }
-                    };
+                        Name = "Main Central Warehouse",
+                        Code = "WH-MAIN",
+                        Location = "Central Distribution Center, Building A",
+                        Description = "Primary inventory storage and fulfillment warehouse",
+                        IsActive = true
+                    },
+                    new Warehouse
+                    {
+                        Name = "East Regional Facility",
+                        Code = "WH-EAST",
+                        Location = "Metro Logistics Hub, Bay 4",
+                        Description = "Secondary distribution and transfer center",
+                        IsActive = true
+                    }
+                };
 
-                    await context.Warehouses.AddRangeAsync(warehouses);
-                    await context.SaveChangesAsync();
-                    logger.LogInformation("Seeded warehouses: WH-MAIN, WH-EAST");
+                foreach (var wh in defaultWarehouses)
+                {
+                    if (!await context.Warehouses.AnyAsync(w => w.Code == wh.Code))
+                    {
+                        await context.Warehouses.AddAsync(wh);
+                        logger.LogInformation("Seeded warehouse: {Code}", wh.Code);
+                    }
                 }
+                await context.SaveChangesAsync();
 
                 // 4. Seed Categories
-                if (!await context.Categories.AnyAsync())
+                var defaultCategories = new[]
                 {
-                    var categories = new[]
-                    {
-                        new Category { Name = "Electronics", Description = "Computer hardware, peripherals, and electronic equipment" },
-                        new Category { Name = "Office Supplies", Description = "Desk accessories, paper products, and stationery" },
-                        new Category { Name = "Raw Materials", Description = "Production materials, cables, and packaging supplies" }
-                    };
+                    new Category { Name = "Electronics", Description = "Computer hardware, peripherals, and electronic equipment" },
+                    new Category { Name = "Office Supplies", Description = "Desk accessories, paper products, and stationery" },
+                    new Category { Name = "Raw Materials", Description = "Production materials, cables, and packaging supplies" }
+                };
 
-                    await context.Categories.AddRangeAsync(categories);
-                    await context.SaveChangesAsync();
-                    logger.LogInformation("Seeded initial categories.");
+                foreach (var cat in defaultCategories)
+                {
+                    if (!await context.Categories.AnyAsync(c => c.Name == cat.Name))
+                    {
+                        await context.Categories.AddAsync(cat);
+                        logger.LogInformation("Seeded category: {Name}", cat.Name);
+                    }
                 }
+                await context.SaveChangesAsync();
 
                 // 5. Seed Suppliers
                 if (!await context.Suppliers.AnyAsync())
@@ -144,79 +150,86 @@ namespace Data
                 }
 
                 // 7. Seed Products
-                if (!await context.Products.AnyAsync())
+                var electronics = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Electronics")
+                                ?? await context.Categories.FirstAsync();
+                var office = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Office Supplies")
+                             ?? electronics;
+
+                var defaultProducts = new[]
                 {
-                    var electronics = await context.Categories.FirstAsync(c => c.Name == "Electronics");
-                    var office = await context.Categories.FirstAsync(c => c.Name == "Office Supplies");
-
-                    var products = new[]
+                    new Product
                     {
-                        new Product
-                        {
-                            Name = "Dell Latitude 5540 15.6\"",
-                            SKU = "PROD-LAPTOP-01",
-                            Description = "Enterprise core business laptop with Intel Core i7, 16GB RAM, 512GB SSD",
-                            PurchasePrice = 900.00m,
-                            SellingPrice = 1200.00m,
-                            ReorderLevel = 5,
-                            CategoryId = electronics.Id,
-                            IsActive = true
-                        },
-                        new Product
-                        {
-                            Name = "Logitech MX Master 3S Wireless Mouse",
-                            SKU = "PROD-MOUSE-01",
-                            Description = "Ergonomic wireless productivity mouse with ultra-fast scroll wheel",
-                            PurchasePrice = 60.00m,
-                            SellingPrice = 99.99m,
-                            ReorderLevel = 10,
-                            CategoryId = electronics.Id,
-                            IsActive = true
-                        },
-                        new Product
-                        {
-                            Name = "A4 Multipurpose Copy Paper Box (5 Reams)",
-                            SKU = "PROD-PAPER-01",
-                            Description = "High-quality 80gsm white printing paper box (2500 sheets)",
-                            PurchasePrice = 20.00m,
-                            SellingPrice = 35.00m,
-                            ReorderLevel = 25,
-                            CategoryId = office.Id,
-                            IsActive = true
-                        }
-                    };
+                        Name = "Dell Latitude 5540 15.6\"",
+                        SKU = "PROD-LAPTOP-01",
+                        Description = "Enterprise core business laptop with Intel Core i7, 16GB RAM, 512GB SSD",
+                        PurchasePrice = 900.00m,
+                        SellingPrice = 1200.00m,
+                        ReorderLevel = 5,
+                        CategoryId = electronics.Id,
+                        IsActive = true
+                    },
+                    new Product
+                    {
+                        Name = "Logitech MX Master 3S Wireless Mouse",
+                        SKU = "PROD-MOUSE-01",
+                        Description = "Ergonomic wireless productivity mouse with ultra-fast scroll wheel",
+                        PurchasePrice = 60.00m,
+                        SellingPrice = 99.99m,
+                        ReorderLevel = 10,
+                        CategoryId = electronics.Id,
+                        IsActive = true
+                    },
+                    new Product
+                    {
+                        Name = "A4 Multipurpose Copy Paper Box (5 Reams)",
+                        SKU = "PROD-PAPER-01",
+                        Description = "High-quality 80gsm white printing paper box (2500 sheets)",
+                        PurchasePrice = 20.00m,
+                        SellingPrice = 35.00m,
+                        ReorderLevel = 25,
+                        CategoryId = office.Id,
+                        IsActive = true
+                    }
+                };
 
-                    await context.Products.AddRangeAsync(products);
-                    await context.SaveChangesAsync();
-                    logger.LogInformation("Seeded initial products.");
+                foreach (var prod in defaultProducts)
+                {
+                    if (!await context.Products.AnyAsync(p => p.SKU == prod.SKU))
+                    {
+                        await context.Products.AddAsync(prod);
+                        logger.LogInformation("Seeded product: {SKU}", prod.SKU);
+                    }
                 }
+                await context.SaveChangesAsync();
 
                 // 8. Seed Initial Warehouse Stock
-                if (!await context.WarehouseStocks.AnyAsync())
-                {
-                    var whMain = await context.Warehouses.FirstAsync(w => w.Code == "WH-MAIN");
-                    var whEast = await context.Warehouses.FirstOrDefaultAsync(w => w.Code == "WH-EAST");
-                    var products = await context.Products.ToListAsync();
+                var whMain = await context.Warehouses.FirstOrDefaultAsync(w => w.Code == "WH-MAIN");
+                var whEast = await context.Warehouses.FirstOrDefaultAsync(w => w.Code == "WH-EAST");
+                var products = await context.Products.ToListAsync();
 
-                    var stocks = new List<WarehouseStock>();
+                if (whMain != null)
+                {
                     foreach (var product in products)
                     {
-                        int mainQty = product.SKU switch
+                        if (!await context.WarehouseStocks.AnyAsync(ws => ws.WarehouseId == whMain.Id && ws.ProductId == product.Id))
                         {
-                            "PROD-LAPTOP-01" => 50,
-                            "PROD-MOUSE-01" => 120,
-                            "PROD-PAPER-01" => 250,
-                            _ => 30
-                        };
+                            int mainQty = product.SKU switch
+                            {
+                                "PROD-LAPTOP-01" => 50,
+                                "PROD-MOUSE-01" => 120,
+                                "PROD-PAPER-01" => 250,
+                                _ => 30
+                            };
 
-                        stocks.Add(new WarehouseStock
-                        {
-                            WarehouseId = whMain.Id,
-                            ProductId = product.Id,
-                            QuantityOnHand = mainQty
-                        });
+                            await context.WarehouseStocks.AddAsync(new WarehouseStock
+                            {
+                                WarehouseId = whMain.Id,
+                                ProductId = product.Id,
+                                QuantityOnHand = mainQty
+                            });
+                        }
 
-                        if (whEast != null)
+                        if (whEast != null && !await context.WarehouseStocks.AnyAsync(ws => ws.WarehouseId == whEast.Id && ws.ProductId == product.Id))
                         {
                             int eastQty = product.SKU switch
                             {
@@ -226,7 +239,7 @@ namespace Data
                                 _ => 10
                             };
 
-                            stocks.Add(new WarehouseStock
+                            await context.WarehouseStocks.AddAsync(new WarehouseStock
                             {
                                 WarehouseId = whEast.Id,
                                 ProductId = product.Id,
@@ -234,10 +247,8 @@ namespace Data
                             });
                         }
                     }
-
-                    await context.WarehouseStocks.AddRangeAsync(stocks);
                     await context.SaveChangesAsync();
-                    logger.LogInformation("Seeded initial warehouse inventory levels.");
+                    logger.LogInformation("Seeded warehouse inventory levels.");
                 }
 
                 logger.LogInformation("Database initialization & seeding completed successfully.");
