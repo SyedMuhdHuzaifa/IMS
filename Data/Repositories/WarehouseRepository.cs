@@ -8,10 +8,14 @@ namespace Data.Repositories
     public class WarehouseRepository : GenericRepository<Warehouse>, IWarehouseRepository
     {
         public WarehouseRepository(AppDbContext context) : base(context) { }
-       public override async Task<IReadOnlyList<Warehouse>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IReadOnlyList<Warehouse>> GetAllAsync(bool includeInactive = false, CancellationToken ct = default)
         {
-            return await _dbSet
-                .AsNoTracking()
+            var query = _dbSet.AsNoTracking();
+
+            if (!includeInactive)
+                query = query.Where(w => w.IsActive);
+
+            return await query
                 .OrderBy(w => w.Code)
                 .ToListAsync(ct);
         }

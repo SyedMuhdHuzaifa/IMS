@@ -1,4 +1,4 @@
-﻿using DTOs.PurchaseOrder;
+﻿using DTOs.PurchaseOrders;
 
 namespace DTOs.PurchaseOrders
 {

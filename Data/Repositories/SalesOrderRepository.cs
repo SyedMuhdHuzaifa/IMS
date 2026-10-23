@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -12,20 +12,33 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
+                .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .OrderByDescending(so => so.OrderDate)
                 .ToListAsync(ct);
         }
 
         public Task<SalesOrder?> GetByIdWithItemsAsync(int id, CancellationToken ct = default)
             => _dbSet
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
                 .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .FirstOrDefaultAsync(so => so.Id == id, ct);
 
         public async Task<IReadOnlyList<SalesOrder>> GetAllWithItemsAsync(CancellationToken ct = default)
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
                 .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .OrderByDescending(so => so.OrderDate)
                 .ToListAsync(ct);
         }
@@ -34,6 +47,11 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
+                .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .Where(so => so.CustomerId == customerId)
                 .OrderByDescending(so => so.OrderDate)
                 .ToListAsync(ct);
@@ -43,6 +61,11 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
+                .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .Where(so => so.SourceWarehouseId == warehouseId)
                 .OrderByDescending(so => so.OrderDate)
                 .ToListAsync(ct);
@@ -52,6 +75,11 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
+                .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .Where(so => so.Status == status)
                 .OrderByDescending(so => so.OrderDate)
                 .ToListAsync(ct);
@@ -62,6 +90,11 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(so => so.Customer)
+                .Include(so => so.SourceWarehouse)
+                .Include(so => so.CreatedByUser)
+                .Include(so => so.SalesOrderItems)
+                    .ThenInclude(soi => soi.Product)
                 .Where(so => so.OrderDate >= from && so.OrderDate < to)
                 .OrderByDescending(so => so.OrderDate)
                 .ToListAsync(ct);

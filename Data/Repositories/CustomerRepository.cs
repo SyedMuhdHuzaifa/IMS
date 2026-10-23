@@ -2,27 +2,34 @@
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Data.Repositories
 {
-    public class CustomerRepository:GenericRepository<Customer>, ICustomerRepository
+    public class CustomerRepository : GenericRepository<Customer>, ICustomerRepository
     {
-        private readonly AppDbContext? _context;
+        public CustomerRepository(AppDbContext context) : base(context) { }
 
-        public CustomerRepository(AppDbContext context): base(context)
+        public override async Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken ct = default)
         {
-            _context = context;
+            return await _dbSet
+                .AsNoTracking()
+                .OrderBy(c => c.Name)
+                .ToListAsync(ct);
         }
-        public async Task<Customer?> GetByEmailAsync(string email, CancellationToken ct = default)
+
+        public async Task<Customer?> GetByEmailAsync(string email, int? excludeId = null, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return null;
 
-            return await _context.Customers.FirstOrDefaultAsync(customer => customer.Email == email); 
+            var normalized = email.Trim().ToLower();
+
+            return await _dbSet.FirstOrDefaultAsync(c =>
+                c.Email != null &&
+                c.Email.ToLower() == normalized &&
+                (!excludeId.HasValue || c.Id != excludeId.Value), ct);
         }
+
         public async Task<IReadOnlyList<Customer>> SearchByNameAsync(string term, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(term))
@@ -30,16 +37,26 @@ namespace Data.Repositories
 
             term = term.Trim();
 
-            return await _context.Customers
-        .Where(customer => customer.Name.Contains(term))
-        .OrderBy(customer => customer.Name)
-        .ToListAsync(ct);
-        }
-        public async Task<bool> ExistsAsync(int id, CancellationToken ct = default)
-        {
-            return await _context.Customers.AnyAsync(customer => customer.Id == id);
+            return await _dbSet
+                .AsNoTracking()
+                .Where(c => c.Name.Contains(term))
+                .OrderBy(c => c.Name)
+                .ToListAsync(ct);
         }
 
-       
+        public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
+            => _dbSet.AnyAsync(c => c.Id == id, ct);
+
+        public Task<int> GetSalesOrderCountAsync(int customerId, CancellationToken ct = default)
+            => _context.SalesOrders.CountAsync(so => so.CustomerId == customerId, ct);
+
+        public async Task<IReadOnlyDictionary<int, int>> GetSalesOrderCountsAsync(CancellationToken ct = default)
+        {
+            return await _context.SalesOrders
+                .AsNoTracking()
+                .GroupBy(so => so.CustomerId)
+                .Select(g => new { CustomerId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CustomerId, x => x.Count, ct);
+        }
     }
 }

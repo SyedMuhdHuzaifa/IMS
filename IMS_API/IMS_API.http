@@ -1,6 +1,218 @@
 @IMS_API_HostAddress = http://localhost:5062
 
-GET {{IMS_API_HostAddress}}/weatherforecast/
-Accept: application/json
+### ===================================================================
+### 1. AUTHENTICATION & IDENTITY (Admin, Manager, Staff)
+### ===================================================================
 
-###
+### 1.1 Login as Default Admin
+# @name adminLogin
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "admin",
+  "password": "AdminPassword123!"
+}
+
+### Store Admin Token
+@adminToken = {{adminLogin.response.body.token}}
+@adminRefreshToken = {{adminLogin.response.body.refreshToken}}
+
+### 1.2 Login as Manager
+# @name managerLogin
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "manager",
+  "password": "ManagerPassword123!"
+}
+
+### Store Manager Token
+@managerToken = {{managerLogin.response.body.token}}
+
+### 1.3 Login as Warehouse Staff
+# @name staffLogin
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "staff",
+  "password": "StaffPassword123!"
+}
+
+### Store Staff Token
+@staffToken = {{staffLogin.response.body.token}}
+
+### 1.4 Get Current Logged-in User Profile
+GET {{IMS_API_HostAddress}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+### 1.5 Refresh JWT Token
+POST {{IMS_API_HostAddress}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{adminRefreshToken}}"
+}
+
+### ===================================================================
+### 2. MASTER DATA (Categories, Warehouses, Suppliers, Customers, Products)
+### ===================================================================
+
+### 2.1 Get All Categories
+GET {{IMS_API_HostAddress}}/api/categories
+Authorization: Bearer {{adminToken}}
+
+### 2.2 Create a New Category (Admin or Manager)
+POST {{IMS_API_HostAddress}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Networking Gear",
+  "description": "Routers, switches, and enterprise access points"
+}
+
+### 2.3 Get All Warehouses
+GET {{IMS_API_HostAddress}}/api/warehouses
+Authorization: Bearer {{staffToken}}
+
+### 2.4 Get All Suppliers
+GET {{IMS_API_HostAddress}}/api/suppliers
+Authorization: Bearer {{staffToken}}
+
+### 2.5 Get All Customers
+GET {{IMS_API_HostAddress}}/api/customers
+Authorization: Bearer {{staffToken}}
+
+### 2.6 Get All Products
+GET {{IMS_API_HostAddress}}/api/products
+Authorization: Bearer {{staffToken}}
+
+### 2.7 Search Products by Keyword
+GET {{IMS_API_HostAddress}}/api/products/search?term=Dell
+Authorization: Bearer {{staffToken}}
+
+### ===================================================================
+### 3. WAREHOUSE STOCKS & ADJUSTMENTS
+### ===================================================================
+
+### 3.1 Query All Warehouse Stock Levels
+GET {{IMS_API_HostAddress}}/api/warehousestocks
+Authorization: Bearer {{staffToken}}
+
+### 3.2 Check Low Stock Alerts
+GET {{IMS_API_HostAddress}}/api/warehousestocks/low-stock
+Authorization: Bearer {{staffToken}}
+
+### 3.3 Record Stock Adjustment (e.g. Audit reconciliation)
+POST {{IMS_API_HostAddress}}/api/stocktransactions/adjustment
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "warehouseId": 1,
+  "productId": 1,
+  "quantity": 5,
+  "reason": "Physical count audit adjustment +5 units"
+}
+
+### ===================================================================
+### 4. PURCHASE ORDER WORKFLOW (Create -> Submit -> Receive Stock)
+### ===================================================================
+
+### 4.1 Create Purchase Order (Draft)
+# @name createPO
+POST {{IMS_API_HostAddress}}/api/purchaseorders
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "supplierId": 1,
+  "destinationWarehouseId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 10,
+      "unitPrice": 850.00
+    },
+    {
+      "productId": 2,
+      "quantity": 25,
+      "unitPrice": 55.00
+    }
+  ]
+}
+
+### 4.2 Submit Purchase Order
+PATCH {{IMS_API_HostAddress}}/api/purchaseorders/1/submit
+Authorization: Bearer {{staffToken}}
+
+### 4.3 Receive Purchase Order (Automatically increments Warehouse Stock!)
+PATCH {{IMS_API_HostAddress}}/api/purchaseorders/1/receive
+Authorization: Bearer {{staffToken}}
+
+### ===================================================================
+### 5. SALES ORDER WORKFLOW (Create -> Submit -> Ship & Deduct Stock)
+### ===================================================================
+
+### 5.1 Create Sales Order (Draft)
+# @name createSO
+POST {{IMS_API_HostAddress}}/api/salesorders
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "customerId": 1,
+  "sourceWarehouseId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2,
+      "unitPrice": 1200.00
+    }
+  ]
+}
+
+### 5.2 Submit Sales Order
+PATCH {{IMS_API_HostAddress}}/api/salesorders/1/submit
+Authorization: Bearer {{staffToken}}
+
+### 5.3 Ship Sales Order (Automatically deducts Warehouse Stock & logs transaction!)
+PATCH {{IMS_API_HostAddress}}/api/salesorders/1/ship
+Authorization: Bearer {{staffToken}}
+
+### ===================================================================
+### 6. STOCK TRANSFER WORKFLOW (Draft -> Submit -> Approve -> Complete)
+### ===================================================================
+
+### 6.1 Create Stock Transfer (WH-MAIN to WH-EAST)
+# @name createTransfer
+POST {{IMS_API_HostAddress}}/api/stocktransfers
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "sourceWarehouseId": 1,
+  "destinationWarehouseId": 2,
+  "notes": "Transfer surplus laptop inventory to East facility",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 3
+    }
+  ]
+}
+
+### 6.2 Submit Stock Transfer (Status changes to Pending)
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/1/submit
+Authorization: Bearer {{staffToken}}
+
+### 6.3 Approve Stock Transfer (Segregation of Duties: Manager approves!)
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/1/approve
+Authorization: Bearer {{managerToken}}
+
+### 6.4 Complete Stock Transfer (Deducts WH-MAIN and increments WH-EAST!)
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/1/complete
+Authorization: Bearer {{staffToken}}
