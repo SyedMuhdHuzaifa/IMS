@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.SalesOrders;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     public class SalesOrdersController : BaseApiController
     {
         private readonly ISalesOrderService _salesOrderService;
@@ -53,6 +55,7 @@ namespace IMS_API.Controllers
             return Ok(orders);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSalesOrderRequest request, CancellationToken ct = default)
         {
@@ -61,6 +64,7 @@ namespace IMS_API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdOrder.Id }, createdOrder);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateSalesOrderRequest request, CancellationToken ct = default)
         {
@@ -73,6 +77,7 @@ namespace IMS_API.Controllers
             return Ok(updatedOrder);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPatch("{id:int}/submit")]
         public async Task<IActionResult> Submit(int id, CancellationToken ct = default)
         {
@@ -85,6 +90,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPatch("{id:int}/ship")]
         public async Task<IActionResult> Ship(int id, CancellationToken ct = default)
         {
@@ -97,6 +103,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/cancel")]
         public async Task<IActionResult> Cancel(int id, CancellationToken ct = default)
         {

@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.Warehouses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     public class WarehousesController : BaseApiController
     {
         private readonly IWarehouseService _warehouseService;
@@ -32,6 +34,7 @@ namespace IMS_API.Controllers
             return Ok(warehouse);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateWarehouseRequest request, CancellationToken ct = default)
         {
@@ -39,6 +42,7 @@ namespace IMS_API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdWarehouse.Id }, createdWarehouse);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateWarehouseRequest request, CancellationToken ct = default)
         {
@@ -51,6 +55,7 @@ namespace IMS_API.Controllers
             return Ok(updatedWarehouse);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/deactivate")]
         public async Task<IActionResult> Deactivate(int id, CancellationToken ct = default)
         {
@@ -63,6 +68,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/reactivate")]
         public async Task<IActionResult> Reactivate(int id, CancellationToken ct = default)
         {

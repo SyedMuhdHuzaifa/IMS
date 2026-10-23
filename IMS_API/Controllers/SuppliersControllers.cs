@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.Suppliers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     [Route("api/suppliers")]
     public class SuppliersController : BaseApiController
     {
@@ -40,6 +42,7 @@ namespace IMS_API.Controllers
             return Ok(suppliers);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSupplierRequest request, CancellationToken ct = default)
         {
@@ -47,6 +50,7 @@ namespace IMS_API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdSupplier.Id }, createdSupplier);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierRequest request, CancellationToken ct = default)
         {
@@ -59,6 +63,7 @@ namespace IMS_API.Controllers
             return Ok(updatedSupplier);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
         {

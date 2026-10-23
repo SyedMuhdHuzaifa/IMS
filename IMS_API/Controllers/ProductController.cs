@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.Products;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     [Route("api/products")]
     public class ProductController : BaseApiController
     {
@@ -47,6 +49,7 @@ namespace IMS_API.Controllers
             return Ok(products);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductRequest request, CancellationToken ct = default)
         {
@@ -54,6 +57,7 @@ namespace IMS_API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id }, createdProduct);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRequest request, CancellationToken ct = default)
         {
@@ -66,6 +70,7 @@ namespace IMS_API.Controllers
             return Ok(updatedProduct);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/deactivate")]
         public async Task<IActionResult> Deactivate(int id, CancellationToken ct = default)
         {
@@ -78,6 +83,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/reactivate")]
         public async Task<IActionResult> Reactivate(int id, CancellationToken ct = default)
         {

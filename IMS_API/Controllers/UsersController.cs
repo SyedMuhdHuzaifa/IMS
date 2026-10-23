@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize(Roles = "Admin,Manager")]
     public class UsersController : BaseApiController
     {
         private readonly IApplicationUserService _userService;
@@ -51,6 +53,7 @@ namespace IMS_API.Controllers
             return Ok(updatedUser);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}/roles")]
         public async Task<IActionResult> SetRoles(string id, [FromBody] IReadOnlyList<string> roleNames, CancellationToken ct = default)
         {
@@ -63,6 +66,7 @@ namespace IMS_API.Controllers
             return Ok(updatedUser);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/deactivate")]
         public async Task<IActionResult> Deactivate(string id, CancellationToken ct = default)
         {
@@ -75,6 +79,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/reactivate")]
         public async Task<IActionResult> Reactivate(string id, CancellationToken ct = default)
         {

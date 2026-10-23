@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using Dtos.Roles;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class RolesController : BaseApiController
     {
         private readonly IApplicationRoleService _roleService;

@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.WarehouseStocks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     public class WarehouseStocksController : BaseApiController
     {
         private readonly IWarehouseStockService _warehouseStockService;

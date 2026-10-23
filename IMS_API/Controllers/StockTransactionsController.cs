@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.StockTransactions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     public class StockTransactionsController : BaseApiController
     {
         private readonly IStockTransactionService _stockTransactionService;
@@ -38,6 +40,7 @@ namespace IMS_API.Controllers
             return Ok(transactions);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPost("adjustment")]
         public async Task<IActionResult> RecordAdjustment([FromBody] StockAdjustmentRequest request, CancellationToken ct = default)
         {

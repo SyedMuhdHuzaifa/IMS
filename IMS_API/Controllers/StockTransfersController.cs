@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.StockTransfers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     public class StockTransfersController : BaseApiController
     {
         private readonly IStockTransferService _stockTransferService;
@@ -53,6 +55,7 @@ namespace IMS_API.Controllers
             return Ok(transfers);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateStockTransferRequest request, CancellationToken ct = default)
         {
@@ -61,6 +64,7 @@ namespace IMS_API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdTransfer.Id }, createdTransfer);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateStockTransferRequest request, CancellationToken ct = default)
         {
@@ -73,6 +77,7 @@ namespace IMS_API.Controllers
             return Ok(updatedTransfer);
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPatch("{id:int}/submit")]
         public async Task<IActionResult> Submit(int id, CancellationToken ct = default)
         {
@@ -86,6 +91,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/approve")]
         public async Task<IActionResult> Approve(int id, CancellationToken ct = default)
         {
@@ -99,6 +105,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager,WarehouseStaff")]
         [HttpPatch("{id:int}/complete")]
         public async Task<IActionResult> Complete(int id, CancellationToken ct = default)
         {
@@ -111,6 +118,7 @@ namespace IMS_API.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPatch("{id:int}/cancel")]
         public async Task<IActionResult> Cancel(int id, CancellationToken ct = default)
         {

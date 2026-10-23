@@ -1,9 +1,11 @@
 using Business.Interfaces;
 using DTOs.Customers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IMS_API.Controllers
 {
+    [Authorize]
     public class CustomersController : BaseApiController
     {
         private readonly ICustomerService _customerService;
@@ -38,6 +40,7 @@ namespace IMS_API.Controllers
             return Ok(customers);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCustomerRequest request, CancellationToken ct = default)
         {
@@ -45,6 +48,7 @@ namespace IMS_API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdCustomer.Id }, createdCustomer);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerRequest request, CancellationToken ct = default)
         {
@@ -57,6 +61,7 @@ namespace IMS_API.Controllers
             return Ok(updatedCustomer);
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
         {

@@ -5,6 +5,7 @@ using System.Text;
 using DTOs.Auth;
 using IMS.Data;
 using IMS.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,7 @@ namespace IMS_API.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -62,6 +64,7 @@ namespace IMS_API.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -105,6 +108,7 @@ namespace IMS_API.Controllers
             });
         }
 
+        [AllowAnonymous]
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
@@ -149,6 +153,31 @@ namespace IMS_API.Controllers
             });
         }
 
+        [Authorize]
+        [HttpPost("revoke-token")]
+        public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequest request)
+        {
+            var storedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(r => r.Token == request.RefreshToken);
+
+            if (storedToken == null)
+            {
+                return NotFound(new { message = "Refresh token not found." });
+            }
+
+            if (!storedToken.IsActive)
+            {
+                return BadRequest(new { message = "Refresh token is already expired or revoked." });
+            }
+
+            storedToken.RevokedAt = DateTime.UtcNow;
+            _context.RefreshTokens.Update(storedToken);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Refresh token revoked successfully." });
+        }
+
+        [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
