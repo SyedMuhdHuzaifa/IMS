@@ -11,7 +11,6 @@ namespace IMS.Entities
         public int? ReferenceId { get; set; }
         public string CreatedByUserId { get; set; } = string.Empty;
 
-        // Navigation properties
         public Warehouse? Warehouse { get; set; }
         public Product? Product { get; set; }
         public ApplicationUser? CreatedByUser { get; set; }

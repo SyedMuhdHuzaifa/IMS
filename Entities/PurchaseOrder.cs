@@ -10,7 +10,6 @@ namespace IMS.Entities
         public int DestinationWarehouseId { get; set; }
         public string CreatedByUserId { get; set; } = string.Empty;
 
-        // Navigation properties
         public Supplier? Supplier { get; set; }
         public Warehouse? DestinationWarehouse { get; set; }
         public ApplicationUser? CreatedByUser { get; set; }

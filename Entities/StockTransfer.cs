@@ -12,7 +12,7 @@ namespace IMS.Entities
         public string? ApprovedByUserId { get; set; }
         public DateTime? CompletedAt { get; set; }
 
-        // Navigation properties
+
         public Warehouse? SourceWarehouse { get; set; }
         public Warehouse? DestinationWarehouse { get; set; }
         public ApplicationUser? CreatedByUser { get; set; }

@@ -8,7 +8,6 @@ namespace IMS.Entities
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
         public ICollection<PurchaseOrder> CreatedPurchaseOrders { get; set; } = new List<PurchaseOrder>();
         public ICollection<SalesOrder> CreatedSalesOrders { get; set; } = new List<SalesOrder>();
         public ICollection<StockTransaction> CreatedStockTransactions { get; set; } = new List<StockTransaction>();

@@ -2,15 +2,6 @@ using Data.Interfaces;
 
 namespace Business.Base
 {
-    /// <summary>
-    /// Base service class for standard CRUD operations with automatic DTO mapping.
-    /// Reduces boilerplate code by handling GetAll, GetById, Create, Update, Delete, and SaveChanges.
-    /// Derived services only need to implement mappings and entity-specific validation logic.
-    /// </summary>
-    /// <typeparam name="TEntity">The entity type.</typeparam>
-    /// <typeparam name="TDto">The DTO type for responses.</typeparam>
-    /// <typeparam name="TCreateRequest">The DTO type for create requests.</typeparam>
-    /// <typeparam name="TUpdateRequest">The DTO type for update requests.</typeparam>
     public abstract class BaseService<TEntity, TDto, TCreateRequest, TUpdateRequest> : IBaseService<TEntity, TDto, TCreateRequest, TUpdateRequest>
         where TEntity : class
         where TDto : class
@@ -24,27 +15,19 @@ namespace Business.Base
             Repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
-        /// <summary>
-        /// Gets all entities as DTOs.
-        /// </summary>
+
         public virtual async Task<IReadOnlyList<TDto>> GetAllAsync(CancellationToken ct = default)
         {
             var entities = await Repository.GetAllAsync(ct);
             return entities.Select(MapToDto).ToList();
         }
 
-        /// <summary>
-        /// Gets an entity by ID as a DTO.
-        /// </summary>
         public virtual async Task<TDto?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             var entity = await Repository.GetByIdAsync(id, ct);
             return entity is null ? null : MapToDto(entity);
         }
 
-        /// <summary>
-        /// Creates a new entity from a create request.
-        /// </summary>
         public virtual async Task<TDto> CreateAsync(TCreateRequest request, CancellationToken ct = default)
         {
             ValidateCreateRequest(request);
