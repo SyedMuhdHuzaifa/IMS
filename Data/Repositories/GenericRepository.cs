@@ -32,6 +32,11 @@ namespace Data.Repositories
         {
             return await _dbSet.ToListAsync(ct);
         }
+        // In GenericRepository<T>
+        public virtual void Delete(T entity)
+        {
+            _dbSet.Remove(entity);
+        }
 
         public virtual async Task AddAsync(
             T entity,

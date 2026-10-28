@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -12,19 +12,36 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
+                .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .OrderByDescending(st => st.TransferDate)
                 .ToListAsync(ct);
         }
+
         public Task<StockTransfer?> GetByIdWithItemsAsync(int id, CancellationToken ct = default)
             => _dbSet
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
                 .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .FirstOrDefaultAsync(st => st.Id == id, ct);
 
         public async Task<IReadOnlyList<StockTransfer>> GetAllWithItemsAsync(CancellationToken ct = default)
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
                 .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .OrderByDescending(st => st.TransferDate)
                 .ToListAsync(ct);
         }
@@ -33,6 +50,12 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
+                .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .Where(st => st.SourceWarehouseId == warehouseId)
                 .OrderByDescending(st => st.TransferDate)
                 .ToListAsync(ct);
@@ -42,6 +65,12 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
+                .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .Where(st => st.DestinationWarehouseId == warehouseId)
                 .OrderByDescending(st => st.TransferDate)
                 .ToListAsync(ct);
@@ -51,14 +80,27 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
+                .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .Where(st => st.Status == status)
                 .OrderByDescending(st => st.TransferDate)
                 .ToListAsync(ct);
         }
+
         public async Task<IReadOnlyList<StockTransfer>> GetByTransferDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default)
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.SourceWarehouse)
+                .Include(st => st.DestinationWarehouse)
+                .Include(st => st.CreatedByUser)
+                .Include(st => st.ApprovedByUser)
+                .Include(st => st.StockTransferItems)
+                    .ThenInclude(sti => sti.Product)
                 .Where(st => st.TransferDate >= from && st.TransferDate < to)
                 .OrderByDescending(st => st.TransferDate)
                 .ToListAsync(ct);

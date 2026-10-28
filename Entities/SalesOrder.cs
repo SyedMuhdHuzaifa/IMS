@@ -9,8 +9,6 @@ namespace IMS.Entities
         public decimal TotalAmount { get; set; }
         public int SourceWarehouseId { get; set; }
         public string CreatedByUserId { get; set; } = string.Empty;
-
-        // Navigation properties
         public Customer? Customer { get; set; }
         public Warehouse? SourceWarehouse { get; set; }
         public ApplicationUser? CreatedByUser { get; set; }

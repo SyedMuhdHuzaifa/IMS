@@ -1,113 +1,89 @@
-﻿
-using Data.Interfaces;
+﻿using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data.Repositories
 {
-    public class ProductRepository
-        : GenericRepository<Product>, IProductRepository
+    public class ProductRepository : GenericRepository<Product>, IProductRepository
     {
-        public ProductRepository(AppDbContext context)
-            : base(context)
+        public ProductRepository(AppDbContext context) : base(context) { }
+
+        public Task<Product?> GetByIdWithCategoryAsync(int id, CancellationToken ct = default)
+            => _dbSet
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Id == id, ct);
+
+        public async Task<IReadOnlyList<Product>> GetAllWithCategoryAsync(bool includeInactive = false, CancellationToken ct = default)
         {
+            IQueryable<Product> query = _dbSet
+                .AsNoTracking()
+                .Include(p => p.Category);
+
+            if (!includeInactive)
+                query = query.Where(p => p.IsActive);
+
+            return await query
+                .OrderBy(p => p.Name)
+                .ToListAsync(ct);
         }
 
-        public async Task<Product?> GetBySkuAsync(
-            string sku,
-            CancellationToken ct = default)
+        public async Task<Product?> GetBySkuAsync(string sku, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(sku))
                 return null;
 
             sku = sku.Trim();
 
-            return await _context.Products
-                .FirstOrDefaultAsync(
-                    product => product.SKU == sku,
-                    ct);
+            return await _dbSet
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.SKU == sku, ct);
         }
 
-        public async Task<IReadOnlyList<Product>> GetByCategoryIdAsync(
-            int categoryId,
-            bool includeInactive = false,
-            CancellationToken ct = default)
+        public async Task<IReadOnlyList<Product>> GetByCategoryIdAsync(int categoryId, bool includeInactive = false, CancellationToken ct = default)
         {
-            IQueryable<Product> query = _context.Products
-                .Where(product => product.CategoryId == categoryId);
+            IQueryable<Product> query = _dbSet
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .Where(p => p.CategoryId == categoryId);
 
             if (!includeInactive)
-            {
-                query = query.Where(product => product.IsActive);
-            }
+                query = query.Where(p => p.IsActive);
 
             return await query
-                .OrderBy(product => product.Name)
+                .OrderBy(p => p.Name)
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<Product>> SearchByNameAsync(
-            string term,
-            CancellationToken ct = default)
+        public async Task<IReadOnlyList<Product>> SearchByNameAsync(string term, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(term))
                 return Array.Empty<Product>();
 
             term = term.Trim();
 
-            return await _context.Products
-                .Where(product => product.Name.Contains(term))
-                .OrderBy(product => product.Name)
+            return await _dbSet
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .Where(p => p.Name.Contains(term))
+                .OrderBy(p => p.Name)
                 .ToListAsync(ct);
         }
 
-        public async Task<bool> ExistsAsync(
-            int id,
-            CancellationToken ct = default)
-        {
-            return await _context.Products
-                .AnyAsync(product => product.Id == id, ct);
-        }
+        public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
+            => _dbSet.AnyAsync(p => p.Id == id, ct);
 
-        public async Task<bool> SkuExistsAsync(
-            string sku,
-            int? excludeId = null,
-            CancellationToken ct = default)
+        public async Task<bool> SkuExistsAsync(string sku, int? excludeId = null, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(sku))
                 return false;
 
             sku = sku.Trim();
 
-            IQueryable<Product> query = _context.Products
-                .Where(product => product.SKU == sku);
-
-            if (excludeId.HasValue)
-            {
-                query = query.Where(
-                    product => product.Id != excludeId.Value);
-            }
-
-            return await query.AnyAsync(ct);
-        }
-
-        public async Task DeactivateAsync(
-            int id,
-            CancellationToken ct = default)
-        {
-            var product = await _context.Products
-                .FirstOrDefaultAsync(
-                    product => product.Id == id,
-                    ct);
-
-            if (product is null)
-            {
-                throw new KeyNotFoundException(
-                    $"Product with ID '{id}' was not found.");
-            }
-
-            product.IsActive = false;
+            return await _dbSet.AnyAsync(p =>
+                p.SKU == sku &&
+                (!excludeId.HasValue || p.Id != excludeId.Value), ct);
         }
     }
 }

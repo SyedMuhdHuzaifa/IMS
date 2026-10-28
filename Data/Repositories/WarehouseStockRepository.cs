@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -9,8 +9,23 @@ namespace Data.Repositories
     {
 
        public WarehouseStockRepository(AppDbContext context) : base(context) { }
+
+       public override async Task<IReadOnlyList<WarehouseStock>> GetAllAsync(CancellationToken ct = default)
+       {
+           return await _dbSet
+               .AsNoTracking()
+               .Include(ws => ws.Warehouse)
+               .Include(ws => ws.Product)
+               .OrderBy(ws => ws.WarehouseId)
+               .ThenBy(ws => ws.ProductId)
+               .ToListAsync(ct);
+       }
+
        public Task<WarehouseStock?> GetByWarehouseAndProductAsync(int warehouseId, int productId, CancellationToken ct = default)
-            => _dbSet.FirstOrDefaultAsync(ws => ws.WarehouseId == warehouseId && ws.ProductId == productId, ct);
+            => _dbSet
+                .Include(ws => ws.Warehouse)
+                .Include(ws => ws.Product)
+                .FirstOrDefaultAsync(ws => ws.WarehouseId == warehouseId && ws.ProductId == productId, ct);
        public async Task<IReadOnlyList<WarehouseStock>> GetByWarehouseAsync(int warehouseId, CancellationToken ct = default)
        {
             return await _dbSet
@@ -47,6 +62,15 @@ namespace Data.Repositories
                     p.ReorderLevel,
                     p.WarehouseStocks.Sum(ws => (int?)ws.QuantityOnHand) ?? 0))
                 .ToListAsync(ct);
+        }
+
+        public async Task<IReadOnlyDictionary<int, int>> GetTotalsByProductAsync(CancellationToken ct = default)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .GroupBy(ws => ws.ProductId)
+                .Select(g => new { ProductId = g.Key, Total = g.Sum(ws => ws.QuantityOnHand) })
+                .ToDictionaryAsync(x => x.ProductId, x => x.Total, ct);
         }
     }
 }

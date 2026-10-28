@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DTOs.StockTransfer
+﻿namespace DTOs.StockTransfers
 {
-    internal clasnamespace DTOs.StockTransfers
-    {
     // Full detail view, including line items.
     public class StockTransferDto
     {
@@ -28,9 +22,5 @@ namespace DTOs.StockTransfer
         public DateTime? CompletedAt { get; set; }
 
         public IReadOnlyList<StockTransferItemDto> Items { get; set; } = Array.Empty<StockTransferItemDto>();
-    }
-}
-s StockTransferDto
-    {
     }
 }

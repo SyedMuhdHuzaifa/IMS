@@ -8,7 +8,6 @@ namespace IMS.Entities
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
 
-        // Navigation properties
         public SalesOrder? SalesOrder { get; set; }
         public Product? Product { get; set; }
     }

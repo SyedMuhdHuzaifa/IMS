@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -7,28 +7,35 @@ namespace Data.Repositories
 {
     public class PurchaseOrderRepository : GenericRepository<PurchaseOrder>, IPurchaseOrderRepository
     {
-        private readonly AppDbContext _context;
-
         public PurchaseOrderRepository(AppDbContext context): base(context)
         {
-            _context = context;
         }
 
         public async Task<PurchaseOrder?> GetByIdAsync(int id, bool includeItems = false, CancellationToken ct = default)
         {
-            IQueryable<PurchaseOrder> query = _context.PurchaseOrders;
+            IQueryable<PurchaseOrder> query = _context.PurchaseOrders
+                .Include(po => po.Supplier)
+                .Include(po => po.DestinationWarehouse)
+                .Include(po => po.CreatedByUser);
 
             if (includeItems)
-                query = query.Include(po => po.PurchaseOrderItems);
+                query = query.Include(po => po.PurchaseOrderItems)
+                             .ThenInclude(poi => poi.Product);
 
             return await query.FirstOrDefaultAsync(po => po.Id == id, ct);
         }
+
         public async Task<IReadOnlyList<PurchaseOrder>> GetAllAsync(bool includeItems = false, CancellationToken ct = default)
         {
-            IQueryable<PurchaseOrder> query = _context.PurchaseOrders.AsNoTracking();
+            IQueryable<PurchaseOrder> query = _context.PurchaseOrders
+                .AsNoTracking()
+                .Include(po => po.Supplier)
+                .Include(po => po.DestinationWarehouse)
+                .Include(po => po.CreatedByUser);
 
             if (includeItems)
-                query = query.Include(po => po.PurchaseOrderItems);
+                query = query.Include(po => po.PurchaseOrderItems)
+                             .ThenInclude(poi => poi.Product);
 
             return await query
                 .OrderByDescending(po => po.OrderDate)
@@ -39,6 +46,11 @@ namespace Data.Repositories
         {
             return await _context.PurchaseOrders
                 .AsNoTracking()
+                .Include(po => po.Supplier)
+                .Include(po => po.DestinationWarehouse)
+                .Include(po => po.CreatedByUser)
+                .Include(po => po.PurchaseOrderItems)
+                    .ThenInclude(poi => poi.Product)
                 .Where(po => po.SupplierId == supplierId)
                 .OrderByDescending(po => po.OrderDate)
                 .ToListAsync(ct);
@@ -48,6 +60,11 @@ namespace Data.Repositories
         {
             return await _context.PurchaseOrders
                 .AsNoTracking()
+                .Include(po => po.Supplier)
+                .Include(po => po.DestinationWarehouse)
+                .Include(po => po.CreatedByUser)
+                .Include(po => po.PurchaseOrderItems)
+                    .ThenInclude(poi => poi.Product)
                 .Where(po => po.DestinationWarehouseId == warehouseId)
                 .OrderByDescending(po => po.OrderDate)
                 .ToListAsync(ct);
@@ -57,14 +74,25 @@ namespace Data.Repositories
         {
             return await _context.PurchaseOrders
                 .AsNoTracking()
+                .Include(po => po.Supplier)
+                .Include(po => po.DestinationWarehouse)
+                .Include(po => po.CreatedByUser)
+                .Include(po => po.PurchaseOrderItems)
+                    .ThenInclude(poi => poi.Product)
                 .Where(po => po.Status == status)
                 .OrderByDescending(po => po.OrderDate)
                 .ToListAsync(ct);
         }
+
         public async Task<IReadOnlyList<PurchaseOrder>> GetByOrderDateRangeAsync(DateTime from, DateTime to, CancellationToken ct = default)
         {
             return await _context.PurchaseOrders
                 .AsNoTracking()
+                .Include(po => po.Supplier)
+                .Include(po => po.DestinationWarehouse)
+                .Include(po => po.CreatedByUser)
+                .Include(po => po.PurchaseOrderItems)
+                    .ThenInclude(poi => poi.Product)
                 .Where(po => po.OrderDate >= from && po.OrderDate < to)
                 .OrderByDescending(po => po.OrderDate)
                 .ToListAsync(ct);

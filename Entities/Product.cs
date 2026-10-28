@@ -12,7 +12,6 @@ namespace IMS.Entities
         public int CategoryId { get; set; }
         public bool IsActive { get; set; }
 
-        // Navigation properties
         public Category? Category { get; set; }
         public ICollection<WarehouseStock> WarehouseStocks { get; set; } = new List<WarehouseStock>();
         public ICollection<StockTransaction> StockTransactions { get; set; } = new List<StockTransaction>();

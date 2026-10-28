@@ -1,6 +1,892 @@
 @IMS_API_HostAddress = http://localhost:5062
 
-GET {{IMS_API_HostAddress}}/weatherforecast/
-Accept: application/json
+### ===================================================================
+### 1. AUTHENTICATION & IDENTITY
+### ===================================================================
 
-###
+### 1.1 Login as Default Admin
+# Use Case: Authenticate as the Super Admin to obtain full system privileges.
+# @name adminLogin
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "admin",
+  "password": "AdminPassword123!"
+}
+
+### Store Admin Tokens
+@adminToken = {{adminLogin.response.body.token}}
+@adminRefreshToken = {{adminLogin.response.body.refreshToken}}
+
+
+### 1.2 Login as Manager
+# Use Case: Authenticate as an Inventory Manager (can approve transfers, manage master data).
+# @name managerLogin
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "manager",
+  "password": "ManagerPassword123!"
+}
+
+### Store Manager Token
+@managerToken = {{managerLogin.response.body.token}}
+
+
+### 1.3 Login as Warehouse Staff
+# Use Case: Authenticate as warehouse floor staff (create PO/SO, submit transfers, record stock adjustments).
+# @name staffLogin
+POST {{IMS_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "userNameOrEmail": "staff",
+  "password": "StaffPassword123!"
+}
+
+### Store Staff Token
+@staffToken = {{staffLogin.response.body.token}}
+
+
+### 1.4 Register a New Self-Service User
+# Use Case: Public self-registration endpoint for a new employee or customer user.
+# @name registerUser
+POST {{IMS_API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "userName": "auditor_clara",
+  "email": "clara@ims.com",
+  "password": "Password123!",
+  "fullName": "Clara Oswald"
+}
+
+
+### 1.5 Get Current User Profile (/me)
+# Use Case: Fetch currently authenticated user's profile details and assigned roles.
+GET {{IMS_API_HostAddress}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+
+### 1.6 Refresh JWT Token
+# Use Case: Exchange an expired JWT access token using a valid active refresh token.
+# @name refreshTokenCall
+POST {{IMS_API_HostAddress}}/api/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{adminRefreshToken}}"
+}
+
+
+### 1.7 Revoke Refresh Token (Logout / Session Kill)
+# Use Case: Invalidate a refresh token when logging out or upon security compromise.
+POST {{IMS_API_HostAddress}}/api/auth/revoke-token
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "refreshToken": "{{adminRefreshToken}}"
+}
+
+
+### ===================================================================
+### 2. ROLE MANAGEMENT (Admin Only)
+### ===================================================================
+
+### 2.1 Get All Roles
+# Use Case: Retrieve all application security roles available in the system.
+GET {{IMS_API_HostAddress}}/api/roles
+Authorization: Bearer {{adminToken}}
+
+
+### 2.2 Create a New Custom Role
+# Use Case: Create an enterprise custom role (e.g., "Auditor" or "ProcurementOfficer").
+# @name createRole
+POST {{IMS_API_HostAddress}}/api/roles
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Auditor",
+  "description": "Inventory auditor with read and physical count audit privileges"
+}
+
+### Store Role ID
+@auditorRoleId = {{createRole.response.body.id}}
+
+
+### 2.3 Get Role by ID
+# Use Case: Query details of a specific role by its GUID identifier.
+GET {{IMS_API_HostAddress}}/api/roles/{{auditorRoleId}}
+Authorization: Bearer {{adminToken}}
+
+
+### 2.4 Update Role
+# Use Case: Modify role name or descriptive scope.
+PUT {{IMS_API_HostAddress}}/api/roles/{{auditorRoleId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Auditor",
+  "description": "Senior inventory compliance auditor"
+}
+
+
+### 2.5 Delete Role
+# Use Case: Permanently delete an obsolete role (cannot delete if users are assigned).
+DELETE {{IMS_API_HostAddress}}/api/roles/{{auditorRoleId}}
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 3. USER MANAGEMENT (Admin & Manager)
+### ===================================================================
+
+### 3.1 Get All Users
+# Use Case: Fetch all active users (pass ?includeInactive=true to see deactivated accounts).
+GET {{IMS_API_HostAddress}}/api/users?includeInactive=true
+Authorization: Bearer {{adminToken}}
+
+
+### 3.2 Create a New User With Initial Role(s)
+# Use Case: Admin/Manager provisions a new staff member with one or more assigned roles.
+# @name createUser
+POST {{IMS_API_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "userName": "sarah_warehouse",
+  "email": "sarah.connor@ims.com",
+  "password": "Password123!",
+  "fullName": "Sarah Connor",
+  "phoneNumber": "+1-555-0199",
+  "roles": [
+    "WarehouseStaff"
+  ]
+}
+
+### Store New User ID
+@newUserId = {{createUser.response.body.id}}
+
+
+### 3.3 Get User by ID
+# Use Case: View complete user profile, activation status, and role assignments.
+GET {{IMS_API_HostAddress}}/api/users/{{newUserId}}
+Authorization: Bearer {{adminToken}}
+
+
+### 3.4 Update User Profile
+# Use Case: Update user's personal information (Email, Full Name, Phone).
+PUT {{IMS_API_HostAddress}}/api/users/{{newUserId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "email": "sarah.updated@ims.com",
+  "fullName": "Sarah Connor-Smith",
+  "phoneNumber": "+1-555-9911"
+}
+
+
+### 3.5 Reassign / Replace User Roles (Admin Only)
+# Use Case: Promote or change a user's roles (e.g. promote staff to Manager).
+PUT {{IMS_API_HostAddress}}/api/users/{{newUserId}}/roles
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+[
+  "Manager",
+  "WarehouseStaff"
+]
+
+
+### 3.6 Deactivate User Account (Admin Only)
+# Use Case: Terminate or suspend user access without losing historic audit trails.
+PATCH {{IMS_API_HostAddress}}/api/users/{{newUserId}}/deactivate
+Authorization: Bearer {{adminToken}}
+
+
+### 3.7 Reactivate User Account (Admin Only)
+# Use Case: Restore account access to a previously suspended user.
+PATCH {{IMS_API_HostAddress}}/api/users/{{newUserId}}/reactivate
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 4. CATEGORIES
+### ===================================================================
+
+### 4.1 Get All Categories
+# Use Case: Retrieve complete list of product categories for catalog navigation/dropdowns.
+GET {{IMS_API_HostAddress}}/api/categories
+Authorization: Bearer {{staffToken}}
+
+
+### 4.2 Create Category (Admin / Manager)
+# Use Case: Create a new inventory classification category.
+# @name createCategory
+POST {{IMS_API_HostAddress}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Network & Telecom",
+  "description": "Routers, enterprise firewalls, and fiber cabling accessories"
+}
+
+### Store Category ID
+@categoryId = {{createCategory.response.body.id}}
+
+
+### 4.3 Get Category by ID
+# Use Case: Fetch specific category metadata.
+GET {{IMS_API_HostAddress}}/api/categories/{{categoryId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 4.4 Update Category (Admin / Manager)
+# Use Case: Rename or modify category description.
+PUT {{IMS_API_HostAddress}}/api/categories/{{categoryId}}
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Enterprise Networking & Security",
+  "description": "High-throughput firewalls, managed switches, and optics"
+}
+
+
+### 4.5 Delete Category (Admin / Manager)
+# Use Case: Remove an empty category that has no linked products.
+DELETE {{IMS_API_HostAddress}}/api/categories/{{categoryId}}
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 5. WAREHOUSES
+### ===================================================================
+
+### 5.1 Get All Warehouses
+# Use Case: List all operating warehouse facilities.
+GET {{IMS_API_HostAddress}}/api/warehouses?includeInactive=false
+Authorization: Bearer {{staffToken}}
+
+
+### 5.2 Create Warehouse (Admin / Manager)
+# Use Case: Register a new distribution center or stock storage location.
+# @name createWarehouse
+POST {{IMS_API_HostAddress}}/api/warehouses
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "South Distribution Hub",
+  "code": "WH-SOUTH",
+  "location": "Dallas, TX - Zone 4",
+  "description": "Primary fulfillment facility for Southern regional shipments"
+}
+
+### Store Warehouse ID
+@warehouseId = {{createWarehouse.response.body.id}}
+
+
+### 5.3 Get Warehouse by ID
+# Use Case: Query warehouse details and address.
+GET {{IMS_API_HostAddress}}/api/warehouses/{{warehouseId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 5.4 Update Warehouse Details (Admin / Manager)
+# Use Case: Update warehouse name, location address, or internal notes.
+PUT {{IMS_API_HostAddress}}/api/warehouses/{{warehouseId}}
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "South Mega Distribution Hub",
+  "location": "Dallas, TX - Bay 12 Expanded",
+  "description": "Expanded facility with 40,000 pallet capacity"
+}
+
+
+### 5.5 Deactivate Warehouse (Admin / Manager)
+# Use Case: Mark warehouse facility inactive during renovations or closure.
+PATCH {{IMS_API_HostAddress}}/api/warehouses/{{warehouseId}}/deactivate
+Authorization: Bearer {{adminToken}}
+
+
+### 5.6 Reactivate Warehouse (Admin / Manager)
+# Use Case: Reopen an inactive warehouse for operations.
+PATCH {{IMS_API_HostAddress}}/api/warehouses/{{warehouseId}}/reactivate
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 6. SUPPLIERS
+### ===================================================================
+
+### 6.1 Get All Suppliers
+# Use Case: List active procurement vendors.
+GET {{IMS_API_HostAddress}}/api/suppliers
+Authorization: Bearer {{staffToken}}
+
+
+### 6.2 Search Suppliers by Term
+# Use Case: Instant vendor lookup by name, email, or telephone.
+GET {{IMS_API_HostAddress}}/api/suppliers/search?term=Tech
+Authorization: Bearer {{staffToken}}
+
+
+### 6.3 Create Supplier (Admin / Manager)
+# Use Case: Onboard a new vendor for purchase ordering.
+# @name createSupplier
+POST {{IMS_API_HostAddress}}/api/suppliers
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Cisco Systems Global",
+  "email": "orders@cisco-global.com",
+  "phone": "+1-800-553-6387",
+  "address": "170 West Tasman Dr, San Jose, CA 95134"
+}
+
+### Store Supplier ID
+@supplierId = {{createSupplier.response.body.id}}
+
+
+### 6.4 Get Supplier by ID
+# Use Case: View vendor profile and contact points.
+GET {{IMS_API_HostAddress}}/api/suppliers/{{supplierId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 6.5 Update Supplier (Admin / Manager)
+# Use Case: Update vendor billing address, dispatch email, or phone.
+PUT {{IMS_API_HostAddress}}/api/suppliers/{{supplierId}}
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Cisco Systems Enterprise Division",
+  "email": "enterprise-sales@cisco.com",
+  "phone": "+1-800-553-0000",
+  "address": "170 West Tasman Dr, Bldg 10, San Jose, CA 95134"
+}
+
+
+### 6.6 Delete Supplier (Admin / Manager)
+# Use Case: Remove supplier record if no historical purchase orders exist.
+DELETE {{IMS_API_HostAddress}}/api/suppliers/{{supplierId}}
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 7. CUSTOMERS
+### ===================================================================
+
+### 7.1 Get All Customers
+# Use Case: List client accounts for sales order dispatch.
+GET {{IMS_API_HostAddress}}/api/customers
+Authorization: Bearer {{staffToken}}
+
+
+### 7.2 Search Customers by Term
+# Use Case: Search client base by business name, email, or phone.
+GET {{IMS_API_HostAddress}}/api/customers/search?term=Acme
+Authorization: Bearer {{staffToken}}
+
+
+### 7.3 Create Customer (Admin / Manager)
+# Use Case: Register a new wholesale/retail customer account.
+# @name createCustomer
+POST {{IMS_API_HostAddress}}/api/customers
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Omega Tech Solutions LLC",
+  "email": "procurement@omegatech.io",
+  "phone": "+1-415-555-0143",
+  "address": "500 Howard St, Suite 300, San Francisco, CA 94105"
+}
+
+### Store Customer ID
+@customerId = {{createCustomer.response.body.id}}
+
+
+### 7.4 Get Customer by ID
+# Use Case: Fetch client address and details.
+GET {{IMS_API_HostAddress}}/api/customers/{{customerId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 7.5 Update Customer (Admin / Manager)
+# Use Case: Update customer delivery destination or contact representative.
+PUT {{IMS_API_HostAddress}}/api/customers/{{customerId}}
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Omega Tech Solutions Inc.",
+  "email": "purchasing@omegatech.io",
+  "phone": "+1-415-555-9988",
+  "address": "750 Battery St, 6th Floor, San Francisco, CA 94111"
+}
+
+
+### 7.6 Delete Customer (Admin / Manager)
+# Use Case: Delete customer entry (only if no sales orders reference them).
+DELETE {{IMS_API_HostAddress}}/api/customers/{{customerId}}
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 8. PRODUCTS CATALOG
+### ===================================================================
+
+### 8.1 Get All Products
+# Use Case: List master product catalog (includeInactive=true shows decommissioned SKUs).
+GET {{IMS_API_HostAddress}}/api/products?includeInactive=false
+Authorization: Bearer {{staffToken}}
+
+
+### 8.2 Search Products by Keyword
+# Use Case: Search products by SKU or Name substring (e.g. 'Dell', 'Switch', 'Router').
+GET {{IMS_API_HostAddress}}/api/products/search?term=Dell
+Authorization: Bearer {{staffToken}}
+
+
+### 8.3 Get Products by Category
+# Use Case: Filter catalog items by their specific category ID.
+GET {{IMS_API_HostAddress}}/api/products/category/1
+Authorization: Bearer {{staffToken}}
+
+
+### 8.4 Create Product (Admin / Manager)
+# Use Case: Introduce a new item SKU into the catalog with pricing and reorder threshold.
+# @name createProduct
+POST {{IMS_API_HostAddress}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Cisco Catalyst 9300 48-Port Switch",
+  "sku": "CSCO-CAT9300-48P",
+  "description": "Layer 3 managed gigabit PoE+ enterprise switch",
+  "purchasePrice": 2200.00,
+  "sellingPrice": 3450.00,
+  "reorderLevel": 5,
+  "categoryId": 1
+}
+
+### Store Product ID
+@productId = {{createProduct.response.body.id}}
+
+
+### 8.5 Get Product by ID
+# Use Case: Query detailed specs, pricing, and reorder point of a product.
+GET {{IMS_API_HostAddress}}/api/products/{{productId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 8.6 Update Product (Admin / Manager)
+# Use Case: Adjust selling/purchase prices, reorder thresholds, or descriptions (SKU is immutable).
+PUT {{IMS_API_HostAddress}}/api/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{managerToken}}
+
+{
+  "name": "Cisco Catalyst 9300 48-Port Switch (PoE+)",
+  "description": "Enterprise Layer 3 switch with redundant power supply",
+  "purchasePrice": 2250.00,
+  "sellingPrice": 3500.00,
+  "reorderLevel": 8,
+  "categoryId": 1
+}
+
+
+### 8.7 Deactivate Product (Admin / Manager)
+# Use Case: Discontinue an item so it cannot be added to new orders.
+PATCH {{IMS_API_HostAddress}}/api/products/{{productId}}/deactivate
+Authorization: Bearer {{adminToken}}
+
+
+### 8.8 Reactivate Product (Admin / Manager)
+# Use Case: Restore an archived product back to active selling catalog.
+PATCH {{IMS_API_HostAddress}}/api/products/{{productId}}/reactivate
+Authorization: Bearer {{adminToken}}
+
+
+### ===================================================================
+### 9. WAREHOUSE STOCKS & INVENTORY VISIBILITY
+### ===================================================================
+
+### 9.1 Query Filtered Warehouse Stocks
+# Use Case: Multi-criteria stock query across warehouses and products (excludeZero=true hides 0 balances).
+GET {{IMS_API_HostAddress}}/api/warehousestocks?warehouseId=1&productId=1&excludeZero=false
+Authorization: Bearer {{staffToken}}
+
+
+### 9.2 Get Stock Breakdown by Warehouse
+# Use Case: View complete on-hand inventory levels stored inside a specific warehouse.
+GET {{IMS_API_HostAddress}}/api/warehousestocks/warehouse/1
+Authorization: Bearer {{staffToken}}
+
+
+### 9.3 Get Stock Distribution for a Product Across All Warehouses
+# Use Case: See how a single product's inventory is distributed across all facilities.
+GET {{IMS_API_HostAddress}}/api/warehousestocks/product/1
+Authorization: Bearer {{staffToken}}
+
+
+### 9.4 Get Total On-Hand Aggregated Count
+# Use Case: Get company-wide total units on hand for an SKU (sum across all warehouses).
+GET {{IMS_API_HostAddress}}/api/warehousestocks/product/1/total-on-hand
+Authorization: Bearer {{staffToken}}
+
+
+### 9.5 Get Low Stock Alert Items
+# Use Case: Trigger replenishment report: lists all products where total stock <= ReorderLevel.
+GET {{IMS_API_HostAddress}}/api/warehousestocks/low-stock
+Authorization: Bearer {{staffToken}}
+
+
+### ===================================================================
+### 10. STOCK TRANSACTIONS & ADJUSTMENTS (AUDIT TRAIL)
+### ===================================================================
+
+### 10.1 Get Stock Transaction History for a Product
+# Use Case: Full audit ledger of all ins, outs, adjustments, and transfers for a product.
+GET {{IMS_API_HostAddress}}/api/stocktransactions/product/1?warehouseId=1
+Authorization: Bearer {{staffToken}}
+
+
+### 10.2 Get Stock Transaction History for a Warehouse
+# Use Case: Comprehensive movement log of every event that occurred in a warehouse.
+GET {{IMS_API_HostAddress}}/api/stocktransactions/warehouse/1
+Authorization: Bearer {{staffToken}}
+
+
+### 10.3 Get Stock Transactions by Date Range
+# Use Case: Audit ledger filtering for financial month-end reconciliations.
+GET {{IMS_API_HostAddress}}/api/stocktransactions/date-range?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&warehouseId=1
+Authorization: Bearer {{staffToken}}
+
+
+### 10.4 Record Manual Stock Adjustment
+# Use Case: Physical stocktake reconciliation (+ positive to increment, - negative to decrement).
+POST {{IMS_API_HostAddress}}/api/stocktransactions/adjustment
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "warehouseId": 1,
+  "productId": 1,
+  "quantity": 3,
+  "reason": "Annual physical count: found 3 unrecorded units on aisle 4"
+}
+
+
+### ===================================================================
+### 11. PURCHASE ORDER WORKFLOW (Procurement & Receiving)
+### ===================================================================
+
+### 11.1 Get All Purchase Orders
+# Use Case: Overview list of all vendor POs with their statuses and totals.
+GET {{IMS_API_HostAddress}}/api/purchaseorders
+Authorization: Bearer {{staffToken}}
+
+
+### 11.2 Filter Purchase Orders by Supplier
+# Use Case: View orders placed with a specific vendor.
+GET {{IMS_API_HostAddress}}/api/purchaseorders/supplier/1
+Authorization: Bearer {{staffToken}}
+
+
+### 11.3 Filter Purchase Orders by Destination Warehouse
+# Use Case: Warehouse managers tracking inward inbound freight for their facility.
+GET {{IMS_API_HostAddress}}/api/purchaseorders/warehouse/1
+Authorization: Bearer {{staffToken}}
+
+
+### 11.4 Filter Purchase Orders by Status
+# Use Case: Find all POs in a specific state (Draft, Submitted, Received, Cancelled).
+GET {{IMS_API_HostAddress}}/api/purchaseorders/status/Draft
+Authorization: Bearer {{staffToken}}
+
+
+### 11.5 Create Purchase Order (Draft)
+# Use Case: Staff creates a new Draft purchase order for goods to be delivered to WH-MAIN.
+# @name createPurchaseOrder
+POST {{IMS_API_HostAddress}}/api/purchaseorders
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "supplierId": 1,
+  "destinationWarehouseId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 15,
+      "unitPrice": 850.00
+    },
+    {
+      "productId": 2,
+      "quantity": 30,
+      "unitPrice": 50.00
+    }
+  ]
+}
+
+### Store PO ID
+@poId = {{createPurchaseOrder.response.body.id}}
+
+
+### 11.6 Get Purchase Order by ID
+# Use Case: Inspect detailed line items, unit costs, and current status of a PO.
+GET {{IMS_API_HostAddress}}/api/purchaseorders/{{poId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 11.7 Update Purchase Order (While in Draft)
+# Use Case: Adjust line items, quantities, or destination before submitting to vendor.
+PUT {{IMS_API_HostAddress}}/api/purchaseorders/{{poId}}
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "supplierId": 1,
+  "destinationWarehouseId": 1,
+  "orderDate": "2026-10-26T00:00:00Z",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 20,
+      "unitPrice": 840.00
+    }
+  ]
+}
+
+
+### 11.8 Submit Purchase Order
+# Use Case: Change status from Draft -> Submitted (locks order for vendor dispatch).
+PATCH {{IMS_API_HostAddress}}/api/purchaseorders/{{poId}}/submit
+Authorization: Bearer {{staffToken}}
+
+
+### 11.9 Receive Purchase Order (Stock Ingestion)
+# Use Case: Delivery dock receiving: Automatically increments on-hand stock in destination warehouse
+#           and records audit transaction in the ledger!
+PATCH {{IMS_API_HostAddress}}/api/purchaseorders/{{poId}}/receive
+Authorization: Bearer {{staffToken}}
+
+
+### 11.10 Cancel Purchase Order (Admin / Manager)
+# Use Case: Abort/Cancel a draft or submitted PO that vendor cannot fulfill.
+PATCH {{IMS_API_HostAddress}}/api/purchaseorders/{{poId}}/cancel
+Authorization: Bearer {{managerToken}}
+
+
+### ===================================================================
+### 12. SALES ORDER WORKFLOW (Order Placement & Fulfillment)
+### ===================================================================
+
+### 12.1 Get All Sales Orders
+# Use Case: Review customer order backlog and shipment states.
+GET {{IMS_API_HostAddress}}/api/salesorders
+Authorization: Bearer {{staffToken}}
+
+
+### 12.2 Filter Sales Orders by Customer
+# Use Case: View complete order history for a client account.
+GET {{IMS_API_HostAddress}}/api/salesorders/customer/1
+Authorization: Bearer {{staffToken}}
+
+
+### 12.3 Filter Sales Orders by Source Warehouse
+# Use Case: Review fulfillment demand originating from a specific warehouse.
+GET {{IMS_API_HostAddress}}/api/salesorders/warehouse/1
+Authorization: Bearer {{staffToken}}
+
+
+### 12.4 Filter Sales Orders by Status
+# Use Case: Find sales orders by workflow state (Draft, Submitted, Shipped, Cancelled).
+GET {{IMS_API_HostAddress}}/api/salesorders/status/Draft
+Authorization: Bearer {{staffToken}}
+
+
+### 12.5 Create Sales Order (Draft)
+# Use Case: Record a customer sales order in Draft status.
+# @name createSalesOrder
+POST {{IMS_API_HostAddress}}/api/salesorders
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "customerId": 1,
+  "sourceWarehouseId": 1,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2,
+      "unitPrice": 1250.00
+    }
+  ]
+}
+
+### Store Sales Order ID
+@soId = {{createSalesOrder.response.body.id}}
+
+
+### 12.6 Get Sales Order by ID
+# Use Case: View customer shipping information, itemized lines, and fulfillment progress.
+GET {{IMS_API_HostAddress}}/api/salesorders/{{soId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 12.7 Update Sales Order (While in Draft)
+# Use Case: Modify quantities or pricing before submitting for warehouse pick & pack.
+PUT {{IMS_API_HostAddress}}/api/salesorders/{{soId}}
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "customerId": 1,
+  "sourceWarehouseId": 1,
+  "orderDate": "2026-10-26T00:00:00Z",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1,
+      "unitPrice": 1250.00
+    }
+  ]
+}
+
+
+### 12.8 Submit Sales Order
+# Use Case: Confirm customer order and queue it for warehouse picking (Draft -> Submitted).
+PATCH {{IMS_API_HostAddress}}/api/salesorders/{{soId}}/submit
+Authorization: Bearer {{staffToken}}
+
+
+### 12.9 Ship Sales Order (Stock Deduction & Dispatch)
+# Use Case: Warehouse marks order as Shipped: Checks stock availability, deducts on-hand units,
+#           and writes transaction record into the inventory ledger!
+PATCH {{IMS_API_HostAddress}}/api/salesorders/{{soId}}/ship
+Authorization: Bearer {{staffToken}}
+
+
+### 12.10 Cancel Sales Order (Admin / Manager)
+# Use Case: Cancel order on customer request (only allowed prior to shipping).
+PATCH {{IMS_API_HostAddress}}/api/salesorders/{{soId}}/cancel
+Authorization: Bearer {{managerToken}}
+
+
+### ===================================================================
+### 13. STOCK TRANSFERS (Inter-Warehouse Relocation)
+### ===================================================================
+
+### 13.1 Get All Stock Transfers
+# Use Case: Review internal transfer log between regional facilities.
+GET {{IMS_API_HostAddress}}/api/stocktransfers
+Authorization: Bearer {{staffToken}}
+
+
+### 13.2 Filter Stock Transfers by Source Warehouse
+# Use Case: Track outward outbound relocations originating from a warehouse.
+GET {{IMS_API_HostAddress}}/api/stocktransfers/source/1
+Authorization: Bearer {{staffToken}}
+
+
+### 13.3 Filter Stock Transfers by Destination Warehouse
+# Use Case: Track inbound transfers expected to arrive at a warehouse.
+GET {{IMS_API_HostAddress}}/api/stocktransfers/destination/2
+Authorization: Bearer {{staffToken}}
+
+
+### 13.4 Filter Stock Transfers by Status
+# Use Case: Filter transfers by status (Draft, Pending, Approved, Completed, Cancelled).
+GET {{IMS_API_HostAddress}}/api/stocktransfers/status/Pending
+Authorization: Bearer {{staffToken}}
+
+
+### 13.5 Create Stock Transfer (Draft)
+# Use Case: Staff creates a transfer request from WH-MAIN (1) to WH-EAST (2).
+# @name createTransfer
+POST {{IMS_API_HostAddress}}/api/stocktransfers
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "sourceWarehouseId": 1,
+  "destinationWarehouseId": 2,
+  "notes": "Transfer 5 laptop units to cover seasonal demand in East region",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 5
+    }
+  ]
+}
+
+### Store Transfer ID
+@transferId = {{createTransfer.response.body.id}}
+
+
+### 13.6 Get Stock Transfer by ID
+# Use Case: View transfer manifest, item quantities, and authorization timestamps.
+GET {{IMS_API_HostAddress}}/api/stocktransfers/{{transferId}}
+Authorization: Bearer {{staffToken}}
+
+
+### 13.7 Update Stock Transfer (While in Draft)
+# Use Case: Edit quantity or add/remove products prior to submitting for authorization.
+PUT {{IMS_API_HostAddress}}/api/stocktransfers/{{transferId}}
+Content-Type: application/json
+Authorization: Bearer {{staffToken}}
+
+{
+  "sourceWarehouseId": 1,
+  "destinationWarehouseId": 2,
+  "transferDate": "2026-10-26T00:00:00Z",
+  "notes": "Adjusted transfer count: 3 units needed instead of 5",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 3
+    }
+  ]
+}
+
+
+### 13.8 Submit Stock Transfer for Approval
+# Use Case: Status moves Draft -> Pending. Awaiting manager approval (Segregation of Duties).
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/{{transferId}}/submit
+Authorization: Bearer {{staffToken}}
+
+
+### 13.9 Approve Stock Transfer (Manager / Admin Only)
+# Use Case: Manager approves the relocation after validating operational need (Pending -> Approved).
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/{{transferId}}/approve
+Authorization: Bearer {{managerToken}}
+
+
+### 13.10 Complete Stock Transfer (Fulfillment & Balanced Stock Adjustment)
+# Use Case: Receiving dock confirms arrival: Automatically decrements Source warehouse stock
+#           and increments Destination warehouse stock with linked audit entries!
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/{{transferId}}/complete
+Authorization: Bearer {{staffToken}}
+
+
+### 13.11 Cancel Stock Transfer (Admin / Manager)
+# Use Case: Cancel transfer before dispatch (available in Draft, Pending, or Approved states).
+PATCH {{IMS_API_HostAddress}}/api/stocktransfers/{{transferId}}/cancel
+Authorization: Bearer {{managerToken}}

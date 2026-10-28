@@ -8,7 +8,6 @@ namespace IMS.Entities
         public string? Phone { get; set; }
         public string? Address { get; set; }
 
-        // Navigation properties
         public ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
     }
 }

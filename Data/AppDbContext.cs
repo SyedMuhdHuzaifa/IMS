@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<SalesOrder> SalesOrders { get; set; } = null!;
     public DbSet<SalesOrderItem> SalesOrderItems { get; set; } = null!;
 
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder); 
@@ -274,6 +275,15 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.ToTable(t => t.HasCheckConstraint(
                 "CK_SalesOrderItem_QtyPositive",
                 "Quantity > 0"));
+        });
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

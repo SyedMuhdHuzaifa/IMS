@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +12,9 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.Product)
+                .Include(st => st.Warehouse)
+                .Include(st => st.CreatedByUser)
                 .OrderByDescending(st => st.TransactionDate)
                 .ToListAsync(ct);
         }
@@ -24,6 +27,9 @@ namespace Data.Repositories
         {
             IQueryable<StockTransaction> query = _dbSet
                 .AsNoTracking()
+                .Include(st => st.Product)
+                .Include(st => st.Warehouse)
+                .Include(st => st.CreatedByUser)
                 .Where(st => st.ProductId == productId);
 
             if (warehouseId.HasValue)
@@ -37,6 +43,9 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.Product)
+                .Include(st => st.Warehouse)
+                .Include(st => st.CreatedByUser)
                 .Where(st => st.WarehouseId == warehouseId)
                 .OrderByDescending(st => st.TransactionDate)
                 .ToListAsync(ct);
@@ -45,6 +54,9 @@ namespace Data.Repositories
         {
             return await _dbSet
                 .AsNoTracking()
+                .Include(st => st.Product)
+                .Include(st => st.Warehouse)
+                .Include(st => st.CreatedByUser)
                 .Where(st => st.TransactionType == transactionType && st.ReferenceId == referenceId)
                 .OrderByDescending(st => st.TransactionDate)
                 .ToListAsync(ct);
@@ -53,6 +65,9 @@ namespace Data.Repositories
         {
             IQueryable<StockTransaction> query = _dbSet
                 .AsNoTracking()
+                .Include(st => st.Product)
+                .Include(st => st.Warehouse)
+                .Include(st => st.CreatedByUser)
                 .Where(st => st.TransactionDate >= from && st.TransactionDate < to);
 
             if (warehouseId.HasValue)

@@ -1,4 +1,4 @@
-﻿using Data.Interfaces;
+using Data.Interfaces;
 using IMS.Data;
 using IMS.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -38,5 +38,8 @@ namespace Data.Repositories
 
         public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
             => _dbSet.AnyAsync(s => s.Id == id, ct);
+
+        public Task<int> GetPurchaseOrderCountAsync(int supplierId, CancellationToken ct = default)
+            => _context.PurchaseOrders.CountAsync(po => po.SupplierId == supplierId, ct);
     }
 }
