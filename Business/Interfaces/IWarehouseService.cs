@@ -19,5 +19,8 @@ namespace Business.Interfaces
 
         // Returns false if the warehouse doesn't exist.
         Task<bool> ReactivateAsync(int id, CancellationToken ct = default);
+
+        // Deletes the warehouse directly.
+        Task<bool> DeleteAsync(int id, CancellationToken ct = default);
     }
 }

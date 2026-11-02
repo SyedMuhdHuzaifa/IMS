@@ -4,4 +4,5 @@
   <Project Path="DTOs/DTOs.csproj" />
   <Project Path="Entities/Entities.csproj" />
   <Project Path="IMS_API/IMS_API.csproj" />
+  <Project Path="IMS_WEB/IMS_WEB.csproj" Id="166cb5ff-8066-4371-83dd-59591124cff8" />
 </Solution>

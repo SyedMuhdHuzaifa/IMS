@@ -1,0 +1,65 @@
+@model DTOs.Customers.CustomerDto
+
+@{
+    ViewData["Title"] = Model.Name + " - Customer Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">@Model.Name</h2>
+        <small class="text-muted">Customer Account Details</small>
+    </div>
+    <div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary me-2">Edit</a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Customer Information</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Full Name</dt>
+                    <dd class="col-sm-9"><strong>@Model.Name</strong></dd>
+
+                    <dt class="col-sm-3">Email Address</dt>
+                    <dd class="col-sm-9">
+                        @if (!string.IsNullOrEmpty(Model.Email))
+                        {
+                            <a href="mailto:@Model.Email">@Model.Email</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Phone Number</dt>
+                    <dd class="col-sm-9">
+                        @if (!string.IsNullOrEmpty(Model.Phone))
+                        {
+                            <a href="tel:@Model.Phone">@Model.Phone</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3">Billing Address</dt>
+                    <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Address) ? "—" : Model.Address)</dd>
+
+                    <dt class="col-sm-3">Total Sales Orders</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-info text-dark fs-6">@Model.SalesOrderCount</span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

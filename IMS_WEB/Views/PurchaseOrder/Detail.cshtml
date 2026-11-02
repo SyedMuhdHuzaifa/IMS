@@ -1,0 +1,170 @@
+@model DTOs.PurchaseOrders.PurchaseOrderDto
+
+@{
+    ViewData["Title"] = $"Purchase Order #{Model.Id}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Purchase Order #@Model.Id</h2>
+        <small class="text-muted">Detailed view of procurement order</small>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        @TempData["WarningMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Order Header Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <div class="small text-muted fw-semibold">ORDER DATE</div>
+                <div>@Model.OrderDate.ToString("MMM dd, yyyy")</div>
+            </div>
+            <div class="col-md-3">
+                <div class="small text-muted fw-semibold">STATUS</div>
+                <div>
+                    @{
+                        string badgeColor = Model.Status switch
+                        {
+                            "Draft" => "secondary",
+                            "Submitted" => "primary",
+                            "Received" => "success",
+                            "Cancelled" => "danger",
+                            _ => "secondary"
+                        };
+                    }
+                    <span class="badge bg-@badgeColor">@Model.Status</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="small text-muted fw-semibold">TOTAL AMOUNT</div>
+                <div class="h5 mb-0">@Model.TotalAmount.ToString("C")</div>
+            </div>
+            <div class="col-md-3">
+                <div class="small text-muted fw-semibold">CREATED BY</div>
+                <div>@Model.CreatedByUserName</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Supplier</label>
+                <p class="form-control-plaintext">@Model.SupplierName</p>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Destination Warehouse</label>
+                <p class="form-control-plaintext">@Model.DestinationWarehouseName</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Items Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Order Items</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Name</th>
+                        <th>SKU</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-end">Unit Price</th>
+                        <th class="text-end">Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items?.Count > 0)
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.ProductId</td>
+                                <td>@item.ProductName</td>
+                                <td><code>@item.SKU</code></td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                <td class="text-end fw-semibold">@item.LineTotal.ToString("C")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No items in this order.</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light fw-semibold">
+                    <tr>
+                        <td colspan="5" class="text-end">TOTAL:</td>
+                        <td class="text-end">@Model.TotalAmount.ToString("C")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="d-flex gap-2">
+    @if (Model.Status == "Draft")
+    {
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Buyer"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit Order</a>
+
+            <form asp-action="Submit" asp-route-id="@Model.Id" method="post" class="d-inline">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Submit this purchase order?');">Submit Order</button>
+            </form>
+
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete Order</a>
+        }
+    }
+    else if (Model.Status == "Submitted")
+    {
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Warehouse"))
+        {
+            <form asp-action="Receive" asp-route-id="@Model.Id" method="post" class="d-inline">
+                <button type="submit" class="btn btn-success" onclick="return confirm('Mark this order as received?');">Mark as Received</button>
+            </form>
+        }
+
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Buyer"))
+        {
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline">
+                <button type="submit" class="btn btn-warning" onclick="return confirm('Cancel this purchase order?');">Cancel Order</button>
+            </form>
+        }
+    }
+
+    <a asp-action="Index" class="btn btn-outline-secondary ms-auto">Back to List</a>
+</div>

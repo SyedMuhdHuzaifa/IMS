@@ -1,0 +1,56 @@
+@model DTOs.Warehouses.UpdateWarehouseRequest
+
+@{
+    ViewData["Title"] = "Edit Warehouse";
+    var warehouseId = ViewData["WarehouseId"] ?? ViewContext.RouteData.Values["id"];
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Edit Warehouse@(string.IsNullOrWhiteSpace(Model?.Name) ? "" : $": {Model.Name}")</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Edit" asp-route-id="@warehouseId" method="post">
+            <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Name" class="form-label fw-semibold">Warehouse Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control" placeholder="e.g. Central Warehouse" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Location" class="form-label fw-semibold">Location</label>
+                    <input asp-for="Location" class="form-control" placeholder="e.g. Sector 5, Karachi" />
+                    <span asp-validation-for="Location" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Optional notes or details about this warehouse..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

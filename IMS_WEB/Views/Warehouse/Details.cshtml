@@ -1,0 +1,55 @@
+@model DTOs.Warehouses.WarehouseDto
+
+@{
+    ViewData["Title"] = Model.Name + " - Warehouse Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">@Model.Name</h2>
+        <small class="text-muted">Warehouse Code: <span class="badge bg-secondary font-monospace">@Model.Code</span></small>
+    </div>
+    <div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("WarehouseManager"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary me-2">Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger me-2">Delete</a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Warehouse Information</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Warehouse Name</dt>
+                    <dd class="col-sm-8"><strong>@Model.Name</strong></dd>
+
+                    <dt class="col-sm-4">Code</dt>
+                    <dd class="col-sm-8"><code>@Model.Code</code></dd>
+
+                    <dt class="col-sm-4">Location</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Location) ? "—" : Model.Location)</dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Description</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Description) ? "—" : Model.Description)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

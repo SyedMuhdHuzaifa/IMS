@@ -7,8 +7,6 @@ namespace Business.Interfaces
         Task<IReadOnlyList<RoleDto>> GetAllAsync(CancellationToken ct = default);
 
         Task<RoleDto?> GetByIdAsync(string id, CancellationToken ct = default);
-
-        // Throws if a role with the same name already exists.
         Task<RoleDto> CreateAsync(CreateRoleRequest request, CancellationToken ct = default);
 
         // Returns null if the role doesn't exist. Throws if the new name is taken by another role.

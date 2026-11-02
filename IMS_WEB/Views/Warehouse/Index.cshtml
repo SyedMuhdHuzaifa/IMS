@@ -1,0 +1,90 @@
+﻿@model IEnumerable<DTOs.Warehouses.WarehouseDto>
+
+@{
+    ViewData["Title"] = "Warehouses";
+}
+
+<div class = "d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">WareHouses</h2>
+        <small class="text-muted">Manage Warehouses and its Products</small>
+    </div>
+    @if(User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Warehouses Manager"))
+    {
+       <a asp-action="Create" class="btn btn-primary">+ Add New Warehouse</a>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+   <div class="alert alert-success alert-dismissible fade show" role="alert">
+       @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+   </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class =" "card-body p-0"">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 25%;">WareHouse Name</th>
+                        <th class="text-center" style="width: 15%;">Location</th>
+                        <th>Description </th>
+                        <th class="text-end" style="width: 25%;">Actions</th>
+                    </tr>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                              <td colspan="4" class="text-center py-4 text-muted">No Warehouse found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var warehouse in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@warehouse.Name</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @(string.IsNullOrEmpty(warehouse.Location) ? "—" : warehouse.Location)
+                                    </td>
+                                    <td> @(string.IsNullOrEmpty(warehouse.Description) ? "—" : warehouse.Description) </td>
+                                    <td class="text-end">
+            <a asp-action="Details" asp-route-id="@warehouse.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+            
+            @if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("WarehouseManager"))
+            {
+                <a asp-action="Edit" asp-route-id="@warehouse.Id" class="btn btn-sm btn-outline-primary ms-1">Edit</a>
+                <form asp-action="Delete" asp-route-id="@warehouse.Id" method="post" class="d-inline ms-1"
+                      onsubmit="return confirm('Are you sure you want to delete \'@warehouse.Name\'?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            }
+        </td>
+                                </tr>
+                            }
+                        }
+
+
+                    </tbody>
+                </thead>
+            </table>
+        </div>
+    </div>
+      <div class="card-footer text-muted small">
+        Total: <strong>@Model.Count()</strong> Warehouses
+    </div>
+</div>
+

@@ -1,4 +1,6 @@
-﻿namespace DTOs.Products
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DTOs.Products
 {
     public class ProductDto
     {
@@ -17,7 +19,8 @@
 
         // Not on the entity. Computed by the service from WarehouseStock
         // across all warehouses.
-        public int TotalOnHand { get; set; }
+        [Range(1, int.MaxValue)]
+        public int Quantity { get; set; }
 
         // TotalOnHand <= ReorderLevel for active products.
         public bool IsLowStock { get; set; }

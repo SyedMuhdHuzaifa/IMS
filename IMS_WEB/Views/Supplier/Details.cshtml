@@ -1,0 +1,45 @@
+@model DTOs.Suppliers.SupplierDto
+
+@{
+    ViewData["Title"] = "Supplier Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>@Model.Name</h2>
+    <div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary me-2">Edit</a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Supplier Name</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">
+                @if (!string.IsNullOrEmpty(Model.Email))
+                {
+                    <a href="mailto:@Model.Email">@Model.Email</a>
+                }
+                else { <span class="text-muted">—</span> }
+            </dd>
+
+            <dt class="col-sm-3">Phone</dt>
+            <dd class="col-sm-9">@(Model.Phone ?? "—")</dd>
+
+            <dt class="col-sm-3">Address</dt>
+            <dd class="col-sm-9">@(Model.Address ?? "—")</dd>
+
+            <dt class="col-sm-3">Total Purchase Orders</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-info text-dark fs-6">@Model.PurchaseOrderCount</span>
+            </dd>
+        </dl>
+    </div>
+</div>

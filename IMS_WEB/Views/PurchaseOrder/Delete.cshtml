@@ -1,0 +1,101 @@
+@model DTOs.PurchaseOrders.PurchaseOrderDto
+
+@{
+    ViewData["Title"] = $"Delete Purchase Order #{Model.Id}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Delete Purchase Order</h2>
+        <small class="text-muted">Please confirm you want to delete this order</small>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+<div class="alert alert-warning" role="alert">
+    <strong>⚠️ Warning:</strong> This action cannot be undone. Please review the order details below before confirming deletion.
+</div>
+
+<!-- Order Summary Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Order #@Model.Id - @Model.Status</h5>
+    </div>
+
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Order Date</label>
+                <p class="form-control-plaintext">@Model.OrderDate.ToString("MMM dd, yyyy")</p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Supplier</label>
+                <p class="form-control-plaintext">@Model.SupplierName</p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Destination Warehouse</label>
+                <p class="form-control-plaintext">@Model.DestinationWarehouseName</p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Total Amount</label>
+                <p class="form-control-plaintext h5">@Model.TotalAmount.ToString("C")</p>
+            </div>
+        </div>
+
+        <!-- Items Summary -->
+        <div class="mt-4">
+            <h6 class="fw-semibold mb-3">Order Items (@Model.Items?.Count ?? 0)</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items?.Count > 0)
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.ProductName</strong><br />
+                                        <small class="text-muted">SKU: @item.SKU</small>
+                                    </td>
+                                    <td class="text-center">@item.Quantity</td>
+                                    <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                    <td class="text-end">@item.LineTotal.ToString("C")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">No items in this order</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Message -->
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Important:</strong> Deleting this purchase order will permanently remove it from the system. This action cannot be reversed.
+</div>
+
+<!-- Action Buttons -->
+<div class="d-flex gap-2">
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline">
+        <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Are you absolutely sure you want to delete this purchase order?');">
+            <i class="bi bi-trash"></i> Delete Purchase Order
+        </button>
+    </form>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-lg">Cancel & View Order</a>
+    <a asp-action="Index" class="btn btn-outline-secondary btn-lg">Back to List</a>
+</div>

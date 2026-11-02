@@ -29,6 +29,9 @@ namespace DTOs.Products
         [Range(1, int.MaxValue)]
         public int CategoryId { get; set; }
 
+        [Range(1, int.MaxValue)]
+        public int Quantity { get; set; }
+
         // Not included: Id (database-generated), IsActive (new products start active,
         // set by the service), and any stock fields (stock is added through
         // stock receipts and transfers, not on product creation).

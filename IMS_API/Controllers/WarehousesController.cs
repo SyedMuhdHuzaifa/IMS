@@ -80,5 +80,18 @@ namespace IMS_API.Controllers
 
             return NoContent();
         }
+
+        [Authorize(Roles = "Admin,Manager")]
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
+        {
+            var success = await _warehouseService.DeleteAsync(id, ct);
+            if (!success)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
     }
 }

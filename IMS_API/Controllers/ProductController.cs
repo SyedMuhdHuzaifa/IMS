@@ -15,7 +15,6 @@ namespace IMS_API.Controllers
         {
             _productService = productService;
         }
-
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] bool includeInactive = false, CancellationToken ct = default)
         {

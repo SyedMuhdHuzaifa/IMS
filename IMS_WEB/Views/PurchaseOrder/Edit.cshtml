@@ -1,0 +1,153 @@
+@model DTOs.PurchaseOrders.UpdatePurchaseOrderRequest
+
+@{
+    ViewData["Title"] = "Edit Purchase Order";
+    var orderId = ViewData["PurchaseOrderId"];
+    var status = ViewData["PurchaseOrderStatus"];
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Edit Purchase Order #@orderId</h2>
+        <small class="text-muted">Update order details for draft orders</small>
+    </div>
+    <a asp-action="Details" asp-route-id="@orderId" class="btn btn-outline-secondary">Back to Order</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Order Information</h5>
+    </div>
+
+    <div class="card-body">
+        <form asp-action="Edit" asp-route-id="@orderId" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger p-3" role="alert"></div>
+
+            <!-- Supplier and Warehouse Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label asp-for="SupplierId" class="form-label fw-semibold">Supplier <span class="text-danger">*</span></label>
+                    <select asp-for="SupplierId" asp-items="ViewBag.SupplierId" class="form-select">
+                        <option value="">-- Select Supplier --</option>
+                    </select>
+                    <span asp-validation-for="SupplierId" class="text-danger small d-block mt-1"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="DestinationWarehouseId" class="form-label fw-semibold">Destination Warehouse <span class="text-danger">*</span></label>
+                    <select asp-for="DestinationWarehouseId" asp-items="ViewBag.DestinationWarehouseId" class="form-select">
+                        <option value="">-- Select Warehouse --</option>
+                    </select>
+                    <span asp-validation-for="DestinationWarehouseId" class="text-danger small d-block mt-1"></span>
+                </div>
+            </div>
+
+            <!-- Order Date -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label asp-for="OrderDate" class="form-label fw-semibold">Order Date</label>
+                    <input asp-for="OrderDate" type="date" class="form-control" />
+                    <span asp-validation-for="OrderDate" class="text-danger small d-block mt-1"></span>
+                    <small class="text-muted d-block mt-1">Date the supplier order is placed</small>
+                </div>
+            </div>
+
+            <!-- Items Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Order Items</h5>
+                    <small class="text-muted">At least one item is required</small>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="w-40">Product ID <span class="text-danger">*</span></th>
+                                <th class="w-25">Quantity <span class="text-danger">*</span></th>
+                                <th class="w-35">Unit Price <span class="text-danger">*</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <span asp-validation-for="Items" class="text-danger small d-block mt-2"></span>
+                <small class="text-muted d-block mt-2">Note: Replace entire item list with new items below</small>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addItemBtn">+ Add Item</button>
+            </div>
+
+            <!-- Buttons -->
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a asp-action="Details" asp-route-id="@orderId" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Initialize items from model
+        const modelItems = @Html.Raw(Json.Serialize(Model.Items ?? new List<DTOs.PurchaseOrders.PurchaseOrderItemRequest>()));
+
+        function initializeItems() {
+            const tbody = document.getElementById('itemsTableBody');
+            tbody.innerHTML = '';
+
+            if (modelItems && modelItems.length > 0) {
+                modelItems.forEach((item, index) => {
+                    addItemRow(item.productId, item.quantity, item.unitPrice, index);
+                });
+            } else {
+                addItemRow('', '', '', 0);
+            }
+        }
+
+        function addItemRow(productId = '', quantity = '', unitPrice = '', index = null) {
+            const tbody = document.getElementById('itemsTableBody');
+            const rowIndex = index !== null ? index : tbody.children.length;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input type="number" name="Items[${rowIndex}].ProductId" value="${productId}" 
+                           class="form-control form-control-sm" placeholder="e.g. 1" required />
+                </td>
+                <td>
+                    <input type="number" name="Items[${rowIndex}].Quantity" value="${quantity}" 
+                           class="form-control form-control-sm" placeholder="e.g. 10" min="1" required />
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input type="number" name="Items[${rowIndex}].UnitPrice" value="${unitPrice}" 
+                               step="0.01" class="form-control form-control-sm" placeholder="0.00" min="0" required />
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItemRow(this)">Remove</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function removeItemRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+
+            if (document.getElementById('itemsTableBody').children.length === 0) {
+                addItemRow('', '', '', 0);
+            }
+        }
+
+        document.getElementById('addItemBtn').addEventListener('click', function() {
+            const tbody = document.getElementById('itemsTableBody');
+            const rowIndex = tbody.children.length;
+            addItemRow('', '', '', rowIndex);
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeItems);
+    </script>
+}

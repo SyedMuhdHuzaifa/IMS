@@ -32,6 +32,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
             entity.Property(e => e.FullName).HasMaxLength(200);
+
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.HasMany(e => e.CreatedPurchaseOrders)
                 .WithOne(po => po.CreatedByUser)
@@ -52,6 +53,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
                 .WithOne(str => str.CreatedByUser)
                 .HasForeignKey(str => str.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasMany(e => e.ApprovedStockTransfers)
                 .WithOne(str => str.ApprovedByUser)
                 .HasForeignKey(str => str.ApprovedByUserId)
@@ -80,7 +82,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
             entity.Property(e => e.SKU).IsRequired().HasMaxLength(50);
             entity.HasIndex(e => e.SKU).IsUnique();
             entity.HasIndex(e => e.Name);
-
+            entity.Property(e => e.Quantity).IsRequired();
+            entity.ToTable(t => t.HasCheckConstraint("CK_Product_QuantityNonNegative", "Quantity >= 0"));
             entity.Property(e => e.Description).HasMaxLength(1000);
             entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
             entity.Property(e => e.SellingPrice).HasPrecision(18, 2);

@@ -24,5 +24,8 @@ namespace DTOs.Products
 
         [Range(1, int.MaxValue)]
         public int CategoryId { get; set; }
+
+        [Range(1, int.MaxValue)]
+        public int Quantity { get; set; }
     }
 }

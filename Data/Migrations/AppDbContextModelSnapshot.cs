@@ -17,7 +17,7 @@ namespace Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -208,6 +208,9 @@ namespace Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
                     b.Property<int>("ReorderLevel")
                         .HasColumnType("int");
 
@@ -232,6 +235,8 @@ namespace Data.Migrations
                     b.ToTable("Products", t =>
                         {
                             t.HasCheckConstraint("CK_Product_PricesNonNegative", "PurchasePrice >= 0 AND SellingPrice >= 0");
+
+                            t.HasCheckConstraint("CK_Product_QuantityNonNegative", "Quantity >= 0");
                         });
                 });
 

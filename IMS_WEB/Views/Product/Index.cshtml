@@ -1,0 +1,158 @@
+@model IEnumerable<ProductDto>
+
+@{
+    ViewData["Title"] = "Products";
+    var includeInactive = (bool)(ViewBag.IncludeInactive ?? false);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">Product Catalog</h2>
+        <small class="text-muted">Manage your inventory items</small>
+    </div>
+    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+    {
+        <a asp-action="Create" class="btn btn-primary">+ Add New Product</a>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filter Bar -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold mb-1">Search</label>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm"
+                       placeholder="Product name or SKU..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold mb-1">Category</label>
+                <select name="categoryId" asp-items="ViewBag.Categories" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check ms-1">
+                    <input class="form-check-input" type="checkbox" name="includeInactive" value="true"
+                           @(includeInactive ? "checked" : "") id="chkInactive" onchange="this.form.submit()" />
+                    <label class="form-check-label small" for="chkInactive">Show Inactive</label>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>SKU</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th class="text-end">Purchase Price</th>
+                        <th class="text-end">Selling Price</th>
+                        <th class="text-center">On Hand</th>
+                        <th class="text-center">Reorder Lvl</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No products found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var p in Model)
+                    {
+                        <tr class="@(!p.IsActive ? "table-secondary" : "")">
+                            <td><code>@p.SKU</code></td>
+                            <td>
+                                <strong>@p.Name</strong>
+                                @if (p.IsLowStock && p.IsActive)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Low Stock</span>
+                                }
+                            </td>
+                            <td><span class="badge bg-light text-dark border">@p.CategoryName</span></td>
+                            <td class="text-end">@p.PurchasePrice.ToString("C")</td>
+                            <td class="text-end">@p.SellingPrice.ToString("C")</td>
+                            <td class="text-center">
+                                <span class="fw-bold @(p.IsLowStock ? "text-danger" : "text-success")">
+                                    @p.Quantity
+                                </span>
+                            </td>
+                            <td class="text-center">@p.ReorderLevel</td>
+                            <td class="text-center">
+                                @if (p.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                                @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary ms-1">Edit</a>
+                                    @if (p.IsActive)
+                                    {
+                                        <form asp-action="Deactivate" asp-route-id="@p.Id" method="post" class="d-inline ms-1"
+                                              onsubmit="return confirm('Deactivate @p.Name?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">Deactivate</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Reactivate" asp-route-id="@p.Id" method="post" class="d-inline ms-1"
+                                              onsubmit="return confirm('Reactivate @p.Name?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-success">Reactivate</button>
+                                        </form>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer text-muted small">
+        Total: <strong>@Model.Count()</strong> products
+        @if (Model.Any(p => p.IsLowStock && p.IsActive))
+        {
+            <span class="ms-3 text-danger fw-semibold">
+                ⚠ @Model.Count(p => p.IsLowStock && p.IsActive) item(s) below reorder level
+            </span>
+        }
+    </div>
+</div>

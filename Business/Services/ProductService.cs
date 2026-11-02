@@ -79,7 +79,8 @@ namespace Business.Services
                 SellingPrice = request.SellingPrice,
                 ReorderLevel = request.ReorderLevel,
                 CategoryId = request.CategoryId,
-                IsActive = true
+                IsActive = true,
+                Quantity = request.Quantity
             };
 
             await _productRepository.AddAsync(product, ct);
@@ -105,6 +106,7 @@ namespace Business.Services
             product.SellingPrice = request.SellingPrice;
             product.ReorderLevel = request.ReorderLevel;
             product.CategoryId = request.CategoryId;
+            product.Quantity = request.Quantity;
 
             _productRepository.Update(product);
             await _productRepository.SaveChangesAsync(ct);
@@ -164,8 +166,8 @@ namespace Business.Services
             IsActive = product.IsActive,
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.Name ?? string.Empty,
-            TotalOnHand = totalOnHand,
-            IsLowStock = product.IsActive && totalOnHand <= product.ReorderLevel
+            Quantity = product.Quantity,
+            IsLowStock = product.IsActive && product.Quantity <= product.ReorderLevel
         };
 
         private static string? Normalize(string? value)

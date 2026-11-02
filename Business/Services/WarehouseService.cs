@@ -107,6 +107,25 @@ namespace Business.Services
             return true;
         }
 
+        public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+        {
+            var warehouse = await _warehouseRepository.GetByIdAsync(id, ct);
+            if (warehouse is null)
+                return false;
+
+            // Remove related stocks if any, so foreign key constraints don't block deletion
+            var stocks = await _warehouseStockRepository.GetByWarehouseAsync(id, ct);
+            foreach (var stock in stocks)
+            {
+                _warehouseStockRepository.Delete(stock);
+            }
+
+            _warehouseRepository.Delete(warehouse);
+            await _warehouseRepository.SaveChangesAsync(ct);
+
+            return true;
+        }
+
         private static WarehouseDto MapToDto(Warehouse warehouse) => new()
         {
             Id = warehouse.Id,
